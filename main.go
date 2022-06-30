@@ -102,17 +102,15 @@ func main() {
 	OrganizationPrinter(ctx, &wg, organizationsChA)
 
 	//																									/ OrganizationPrinter
-	// OrganizationsStreamer -> OrganizationsFilter -> OrganizationsMapper -> OrganizationsDuplicator -| -> AtlasUsersStreamer
+	// OrganizationsStreamer -> OrganizationsFilter -> OrganizationsMapper -> OrganizationsDuplicator -|-> AtlasUsersStreamer
 	// 																									\ TeamsStreamer
 
 	AtlasUserPrinter(
 		ctx, &wg, AtlasUsersFilter(
 			ctx, &wg, AtlasUsersResponseMapper(
-				//ctx, &wg, AtlasUsersResponseFilter(
 				ctx, &wg, AtlasUsersStreamer(
 					ctx, &wg, client, organizationsCnB,
 				),
-				//),
 			),
 		),
 	)
@@ -144,7 +142,7 @@ func main() {
 	)
 
 	// 																							    / ProjectPrinter
-	// ProjectsStreamer -> ProjectsFilter -> ProjectsMapper -> ProjectFilter -> ProjectDuplicator -| -> ClustersStreamer
+	// ProjectsStreamer -> ProjectsFilter -> ProjectsMapper -> ProjectFilter -> ProjectDuplicator -|-> ClustersStreamer
 	//																							   |\ DatabaseUsersStreamer
 	//																							    \ CustomDbRolesStreamer
 	ProjectPrinter(ctx, &wg, projectsCnA)
@@ -160,7 +158,7 @@ func main() {
 
 	// 															/ ClusterPrinter
 	// ClustersStreamer -> ClustersMapper -> ClusterDuplicator  |- SnapshotsStreamer
-	// 															|\
+	// 															|\ SnapshotsRestoreJobsStreamer
 	//															 \
 	ClusterPrinter(ctx, &wg, clusterCnA)
 
@@ -212,12 +210,12 @@ func main() {
 
 	// SnapshotsRestoreJobsStreamer -> SnapshotsRestoreJobsMapper -> SnapshotRestoreJobFilter -> SnapshotRestoreJobPrinter
 
-	wg.Wait()
+	//time.Sleep(time.Second * 5)
 	//cancelFunc()
 
-	//close(done)
-	//time.Sleep(time.Second * 3)
+	wg.Wait()
 
+	//close(done)
 }
 
 ////////////////////// Channel Encapsulated in Channel //////////////////////

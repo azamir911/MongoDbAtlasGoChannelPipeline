@@ -34,7 +34,13 @@ func DatabaseUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 				if err != nil || databaseUsers == nil || len(databaseUsers) == 0 {
 					break
 				}
-				output <- databaseUsers
+
+				select {
+				case output <- databaseUsers:
+				case <-ctx.Done():
+					return
+				}
+
 				options.PageNum++
 			}
 		}
@@ -54,19 +60,14 @@ func DatabaseUsersMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan [
 			wg.Done()
 		}()
 
-		for {
-			select {
-			case databaseUsers, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Database Users Mapper processing exit!")
-					input = nil
+		for databaseUsers := range input {
+			log.Debug().Msg("Database Users Mapper processing working!")
+			time.Sleep(time.Second)
+			for _, databaseUser := range databaseUsers {
+				select {
+				case output <- databaseUser:
+				case <-ctx.Done():
 					return
-				} else {
-					log.Debug().Msg("Database Users Mapper processing working!")
-					time.Sleep(time.Second)
-					for _, databaseUser := range databaseUsers {
-						output <- databaseUser
-					}
 				}
 			}
 		}
@@ -86,20 +87,17 @@ func DatabaseUserFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mo
 			wg.Done()
 		}()
 
-		for {
+		for databaseUser := range input {
+			log.Debug().Msg("Database User Filter processing working!")
+			time.Sleep(time.Second)
+			if databaseUser.Username == "" {
+				break
+			}
+
 			select {
-			case databaseUser, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Database User Filter processing exit!")
-					input = nil
-					return
-				} else {
-					log.Debug().Msg("Database User Filter processing working!")
-					time.Sleep(time.Second)
-					if databaseUser.Username != "" {
-						output <- databaseUser
-					}
-				}
+			case output <- databaseUser:
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
@@ -112,18 +110,9 @@ func DatabaseUserPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan m
 	go func() {
 		defer wg.Done()
 
-		for {
-			select {
-			case databaseUser, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Database User Printer processing exist!")
-					input = nil
-					return
-				}
-				//time.Sleep(time.Second)
-				log.Debug().Msg("Database User Printer processing working!")
-				log.Info().Msgf("\tDatabase User: Username %v", databaseUser.Username)
-			}
+		for databaseUser := range input {
+			log.Debug().Msg("Database User Printer processing working!")
+			log.Info().Msgf("\tDatabase User: Username %v", databaseUser.Username)
 		}
 	}()
 }

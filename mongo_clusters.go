@@ -34,7 +34,13 @@ func ClustersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 				if err != nil || advancedClustersResponse == nil || len(advancedClustersResponse.Results) == 0 {
 					break
 				}
-				output <- advancedClustersResponse
+
+				select {
+				case output <- advancedClustersResponse:
+				case <-ctx.Done():
+					return
+				}
+
 				options.PageNum++
 			}
 		}
@@ -54,19 +60,14 @@ func ClustersMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 			wg.Done()
 		}()
 
-		for {
-			select {
-			case advancedClustersResponse, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Clusters Mapper processing exit!")
-					input = nil
+		for advancedClustersResponse := range input {
+			log.Debug().Msg("Clusters Mapper processing working!")
+			time.Sleep(time.Second)
+			for _, advancedCluster := range advancedClustersResponse.Results {
+				select {
+				case output <- advancedCluster:
+				case <-ctx.Done():
 					return
-				} else {
-					log.Debug().Msg("Clusters Mapper processing working!")
-					time.Sleep(time.Second)
-					for _, advancedCluster := range advancedClustersResponse.Results {
-						output <- advancedCluster
-					}
 				}
 			}
 		}
@@ -89,21 +90,32 @@ func ClusterDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mo
 			wg.Done()
 		}()
 
-		for {
+		for advancedCluster := range input {
+			log.Debug().Msg("Cluster Duplicator processing working!")
+			time.Sleep(time.Second)
+
 			select {
-			case advancedCluster, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Cluster Duplicator processing exit!")
-					input = nil
-					return
-				} else {
-					log.Debug().Msg("Cluster Duplicator processing working!")
-					time.Sleep(time.Second)
-					outputA <- advancedCluster
-					outputB <- advancedCluster
-					outputC <- advancedCluster
-					outputD <- advancedCluster
-				}
+			case outputA <- advancedCluster:
+			case <-ctx.Done():
+				return
+			}
+
+			select {
+			case outputB <- advancedCluster:
+			case <-ctx.Done():
+				return
+			}
+
+			select {
+			case outputC <- advancedCluster:
+			case <-ctx.Done():
+				return
+			}
+
+			select {
+			case outputD <- advancedCluster:
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
@@ -116,18 +128,9 @@ func ClusterPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 	go func() {
 		defer wg.Done()
 
-		for {
-			select {
-			case cluster, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Cluster Printer processing exist!")
-					input = nil
-					return
-				}
-				//time.Sleep(time.Second)
-				log.Debug().Msg("Cluster Printer processing working!")
-				log.Info().Msgf("\tAdvanced Cluster: %+v", cluster)
-			}
+		for cluster := range input {
+			log.Debug().Msg("Cluster Printer processing working!")
+			log.Info().Msgf("\tAdvanced Cluster: %+v", cluster)
 		}
 	}()
 }

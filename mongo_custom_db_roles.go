@@ -26,7 +26,12 @@ func CustomDbRolesStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 			if err != nil || customDBRoles == nil || len(*customDBRoles) == 0 {
 				break
 			}
-			output <- customDBRoles
+
+			select {
+			case output <- customDBRoles:
+			case <-ctx.Done():
+				return
+			}
 		}
 	}()
 	return output
@@ -48,7 +53,11 @@ func CustomDbRolesMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 			log.Debug().Msg("Custom Db Roles Mapper processing working!")
 			time.Sleep(time.Second)
 			for _, customDBRole := range *customDBRoles {
-				output <- customDBRole
+				select {
+				case output <- customDBRole:
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}()
@@ -71,7 +80,11 @@ func CustomDbRoleFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mo
 			log.Debug().Msg("Custom Db Role Filter processing working!")
 			time.Sleep(time.Second)
 			if customDBRole.RoleName != "" {
-				output <- customDBRole
+				select {
+				case output <- customDBRole:
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}()

@@ -39,7 +39,13 @@ func SnapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodba
 				if err != nil || snapshots == nil || len(snapshots.Results) == 0 {
 					break
 				}
-				output <- snapshots
+
+				select {
+				case output <- snapshots:
+				case <-ctx.Done():
+					return
+				}
+
 				options.PageNum++
 			}
 		}
@@ -93,6 +99,7 @@ func SnapshotFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 			if snapshot == nil || snapshot.ID == "" {
 				break
 			}
+
 			select {
 			case output <- snapshot:
 			case <-ctx.Done():

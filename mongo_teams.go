@@ -34,7 +34,13 @@ func TeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas
 				if err != nil || teams == nil || len(teams) == 0 {
 					break
 				}
-				output <- teams
+
+				select {
+				case output <- teams:
+				case <-ctx.Done():
+					return
+				}
+
 				options.PageNum++
 			}
 		}
@@ -54,19 +60,14 @@ func TeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan []mongodb
 			wg.Done()
 		}()
 
-		for {
-			select {
-			case teams, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Teams Mapper processing exit!")
-					input = nil
+		for teams := range input {
+			log.Debug().Msg("Teams Mapper processing working!")
+			time.Sleep(time.Second)
+			for _, team := range teams {
+				select {
+				case output <- team:
+				case <-ctx.Done():
 					return
-				} else {
-					log.Debug().Msg("Teams Mapper processing working!")
-					time.Sleep(time.Second)
-					for _, team := range teams {
-						output <- team
-					}
 				}
 			}
 		}
@@ -86,19 +87,14 @@ func TeamFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatl
 			wg.Done()
 		}()
 
-		for {
-			select {
-			case team, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Teams Filter processing exit!")
-					input = nil
+		for team := range input {
+			log.Debug().Msg("Teams Filter processing working!")
+			time.Sleep(time.Second)
+			if team.ID != "" {
+				select {
+				case output <- team:
+				case <-ctx.Done():
 					return
-				} else {
-					log.Debug().Msg("Teams Filter processing working!")
-					time.Sleep(time.Second)
-					if team.ID != "" {
-						output <- team
-					}
 				}
 			}
 		}
@@ -112,18 +108,9 @@ func TeamPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbat
 	go func() {
 		defer wg.Done()
 
-		for {
-			select {
-			case team, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Team Printer processing exist!")
-					input = nil
-					return
-				}
-				//time.Sleep(time.Second)
-				log.Debug().Msg("Team Printer processing working!")
-				log.Info().Msgf("\tTeam: ID '%v', Name '%v'", team.ID, team.Name)
-			}
+		for team := range input {
+			log.Debug().Msg("Team Printer processing working!")
+			log.Info().Msgf("\tTeam: ID '%v', Name '%v'", team.ID, team.Name)
 		}
 	}()
 }

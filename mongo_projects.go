@@ -33,7 +33,13 @@ func ProjectsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 			if err != nil || projects == nil || len(projects.Results) == 0 {
 				break
 			}
-			output <- projects
+
+			select {
+			case output <- projects:
+			case <-ctx.Done():
+				return
+			}
+
 			options.PageNum++
 		}
 	}()
@@ -52,18 +58,13 @@ func ProjectsFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 			wg.Done()
 		}()
 
-		for {
+		for projects := range input {
+			log.Debug().Msg("Projects Filter processing working!")
+			time.Sleep(time.Second)
 			select {
-			case projects, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Projects Filter processing exist!")
-					input = nil
-					return
-				} else if projects != nil && len(projects.Results) > 0 {
-					log.Debug().Msg("Projects Filter processing working!")
-					time.Sleep(time.Second)
-					output <- projects
-				}
+			case output <- projects:
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
@@ -82,19 +83,14 @@ func ProjectsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 			wg.Done()
 		}()
 
-		for {
-			select {
-			case projects, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Projects Mapper processing exit!")
-					input = nil
+		for projects := range input {
+			log.Debug().Msg("Projects Mapper processing working!")
+			time.Sleep(time.Second)
+			for _, project := range projects.Results {
+				select {
+				case output <- project:
+				case <-ctx.Done():
 					return
-				} else {
-					log.Debug().Msg("Projects Mapper processing working!")
-					time.Sleep(time.Second)
-					for _, project := range projects.Results {
-						output <- project
-					}
 				}
 			}
 		}
@@ -114,18 +110,18 @@ func ProjectFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongod
 			wg.Done()
 		}()
 
-		for {
+		for project := range input {
+			log.Debug().Msg("Project Filter processing working!")
+			time.Sleep(time.Second)
+
+			if project == nil || project.ID == "" {
+				break
+			}
+
 			select {
-			case project, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Project Filter processing exist!")
-					input = nil
-					return
-				} else if project != nil && project.ID != "" {
-					log.Debug().Msg("Project Filter processing working!")
-					time.Sleep(time.Second)
-					output <- project
-				}
+			case output <- project:
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
@@ -147,23 +143,35 @@ func ProjectDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mo
 			wg.Done()
 		}()
 
-		for {
+		for project := range input {
+			log.Debug().Msg("Project Duplicator processing working!")
+			time.Sleep(time.Second)
+
 			select {
-			case project, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Project Duplicator processing exit!")
-					input = nil
-					return
-				} else {
-					log.Debug().Msg("Project Duplicator processing working!")
-					time.Sleep(time.Second)
-					outputA <- project
-					outputB <- project
-					outputC <- project
-					outputD <- project
-				}
+			case outputA <- project:
+			case <-ctx.Done():
+				return
+			}
+
+			select {
+			case outputB <- project:
+			case <-ctx.Done():
+				return
+			}
+
+			select {
+			case outputC <- project:
+			case <-ctx.Done():
+				return
+			}
+
+			select {
+			case outputD <- project:
+			case <-ctx.Done():
+				return
 			}
 		}
+
 	}()
 	return outputA, outputB, outputC, outputD
 }
@@ -174,18 +182,9 @@ func ProjectPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 	go func() {
 		defer wg.Done()
 
-		for {
-			select {
-			case project, ok := <-input:
-				if !ok {
-					log.Debug().Msg("Project Printer processing exist!")
-					input = nil
-					return
-				}
-				//time.Sleep(time.Second)
-				log.Debug().Msg("Project Printer processing working!")
-				log.Info().Msgf("\tProject: Id %v, Name %v, Created %v, Cluster %v", project.ID, project.Name, project.Created, project.ClusterCount)
-			}
+		for project := range input {
+			log.Debug().Msg("Project Printer processing working!")
+			log.Info().Msgf("\tProject: Id %v, Name %v, Created %v, Cluster %v", project.ID, project.Name, project.Created, project.ClusterCount)
 		}
 	}()
 }

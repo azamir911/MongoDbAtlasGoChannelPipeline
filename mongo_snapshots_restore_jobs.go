@@ -39,7 +39,13 @@ func SnapshotsRestoreJobsStreamer(ctx context.Context, wg *sync.WaitGroup, clien
 				if err != nil || snapshotRestoreJobs == nil || len(snapshotRestoreJobs.Results) == 0 {
 					break
 				}
-				output <- snapshotRestoreJobs
+
+				select {
+				case output <- snapshotRestoreJobs:
+				case <-ctx.Done():
+					return
+				}
+
 				options.PageNum++
 			}
 		}
@@ -93,6 +99,7 @@ func SnapshotRestoreJobFilter(ctx context.Context, wg *sync.WaitGroup, input <-c
 			if snapshotRestoreJob == nil || snapshotRestoreJob.ID == "" {
 				break
 			}
+
 			select {
 			case output <- snapshotRestoreJob:
 			case <-ctx.Done():

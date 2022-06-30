@@ -70,24 +70,6 @@ func OrganizationsFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 				return
 			}
 		}
-		//}
-
-		//for {
-		//	select {
-		//	case organizations, ok := <-input:
-		//		if !ok {
-		//			fmt.Println("Organizations Filter processing exist!")
-		//			input = nil
-		//			return
-		//		} else if organizations != nil {
-		//			fmt.Println("Organizations Filter processing working!")
-		//			time.Sleep(time.Second)
-		//			output <- organizations
-		//		}
-		//		//case <-ctx.Done():
-		//		//	return
-		//	}
-		//}
 	}()
 	return output
 }
@@ -115,22 +97,6 @@ func OrganizationsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 				}
 			}
 		}
-		//for {
-		//	select {
-		//	case organizations, ok := <-input:
-		//		if !ok {
-		//			fmt.Println("Organizations Mapper processing exit!")
-		//			input = nil
-		//			return
-		//		} else {
-		//			fmt.Println("Organizations Mapper processing working!")
-		//			time.Sleep(time.Second)
-		//			for _, organization := range organizations.Results {
-		//				output <- organization
-		//			}
-		//		}
-		//	}
-		//}
 	}()
 	return output
 }
@@ -170,22 +136,6 @@ func OrganizationsDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-ch
 				return
 			}
 		}
-		//for {
-		//	select {
-		//	case organization, ok := <-input:
-		//		if !ok {
-		//			fmt.Println("Organizations Duplicator processing exit!")
-		//			input = nil
-		//			return
-		//		} else {
-		//			fmt.Println("Organizations Duplicator processing working!")
-		//			time.Sleep(time.Second)
-		//			outputA <- organization
-		//			outputB <- organization
-		//			outputC <- organization
-		//		}
-		//	}
-		//}
 	}()
 	return outputA, outputB, outputC
 }
@@ -200,23 +150,8 @@ func OrganizationPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 		}()
 
 		for organization := range input {
-			//fmt.Println("Organization Printer processing working!")
 			log.Debug().Msg("Organization Printer processing working!")
-			//log.Printf("\tOrg: Id %v, Name %v", organization.ID, organization.Name)
 			log.Info().Msgf("\tOrg: Id %v, Name %v", organization.ID, organization.Name)
 		}
-		//for {
-		//	select {
-		//	case organization, ok := <-input:
-		//		if !ok {
-		//			fmt.Println("Organizations Printer processing exist!")
-		//			input = nil
-		//			return
-		//		}
-		//		//time.Sleep(time.Second)
-		//		fmt.Println("Organizations Printer processing working!")
-		//		log.Printf("\tOrg: Id %v, Name %v", organization.ID, organization.Name)
-		//	}
-		//}
 	}()
 }
