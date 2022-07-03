@@ -142,15 +142,16 @@ func main() {
 	)
 	ProjectPrinter(ctx, &wg, projectsCnA)
 
-	// 															/ ClusterPrinter
-	// ClustersStreamer -> ClustersMapper -> ClusterDuplicator  |- SnapshotsStreamer
-	//															|\ SnapshotsStreamer
-	// 															|\ SnapshotsRestoreJobsStreamer
-	//															 \ (Should execute project team assigned)
+	// 																					  / ClusterPrinter
+	// TeamsAssignedStreamer -> ClustersStreamer -> ClustersMapper -> ClusterDuplicator  |- SnapshotsStreamer
+	//																					 |\ SnapshotsStreamer
+	// 																					  \ SnapshotsRestoreJobsStreamer
 	clusterCnA, clusterCnB, clusterCnC, clusterCnD := ClusterDuplicator(
 		ctx, &wg, ClustersMapper(
 			ctx, &wg, ClustersStreamer(
-				ctx, &wg, client, projectsCnB,
+				ctx, &wg, client, TeamsAssignedStreamer(
+					ctx, &wg, client, projectsCnB,
+				),
 			),
 		),
 	)

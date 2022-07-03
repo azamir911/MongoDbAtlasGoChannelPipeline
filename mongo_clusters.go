@@ -4,14 +4,25 @@ import (
 	"context"
 	"github.com/rs/zerolog"
 	"go.mongodb.org/atlas/mongodbatlas"
+	"strings"
 	"sync"
 	"time"
 )
 
-func ClustersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Project) <-chan *mongodbatlas.AdvancedClustersResponse {
+type ClustersWithTeams struct {
+	Clusters      *mongodbatlas.AdvancedClustersResponse
+	AssignedTeams []*mongodbatlas.Result
+}
+
+type ClusterWithTeams struct {
+	Cluster       *mongodbatlas.AdvancedCluster
+	AssignedTeams []*mongodbatlas.Result
+}
+
+func ClustersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *ProjectWithTeams) <-chan *ClustersWithTeams {
 	wg.Add(1)
 	log := ctx.Value(cyLogger).(*zerolog.Logger)
-	output := make(chan *mongodbatlas.AdvancedClustersResponse, 10)
+	output := make(chan *ClustersWithTeams, 10)
 
 	go func() {
 		defer func() {
@@ -20,7 +31,7 @@ func ClustersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 			wg.Done()
 		}()
 
-		for project := range input {
+		for projectWithTeams := range input {
 			// Declare the option to get only one team id
 			options := &mongodbatlas.ListOptions{
 				PageNum:      1,
@@ -30,7 +41,7 @@ func ClustersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 
 			for {
 				time.Sleep(time.Second)
-				advancedClustersResponse, _, err := client.AdvancedClusters.List(ctx, project.ID, options)
+				advancedClustersResponse, _, err := client.AdvancedClusters.List(ctx, projectWithTeams.Project.ID, options)
 				if err != nil {
 					log.Err(err).Msg("Failed to get advanced clusters list")
 					break
@@ -39,8 +50,13 @@ func ClustersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 					break
 				}
 
+				clustersWithTeams := &ClustersWithTeams{
+					Clusters:      advancedClustersResponse,
+					AssignedTeams: projectWithTeams.AssignedTeams,
+				}
+
 				select {
-				case output <- advancedClustersResponse:
+				case output <- clustersWithTeams:
 				case <-ctx.Done():
 					return
 				}
@@ -52,10 +68,10 @@ func ClustersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 	return output
 }
 
-func ClustersMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AdvancedClustersResponse) <-chan *mongodbatlas.AdvancedCluster {
+func ClustersMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClustersWithTeams) <-chan *ClusterWithTeams {
 	wg.Add(1)
 	log := ctx.Value(cyLogger).(*zerolog.Logger)
-	output := make(chan *mongodbatlas.AdvancedCluster, 10)
+	output := make(chan *ClusterWithTeams, 10)
 
 	go func() {
 		defer func() {
@@ -64,12 +80,17 @@ func ClustersMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 			wg.Done()
 		}()
 
-		for advancedClustersResponse := range input {
+		for clustersWithTeams := range input {
 			log.Debug().Msg("Clusters Mapper processing working!")
 			time.Sleep(time.Second)
-			for _, advancedCluster := range advancedClustersResponse.Results {
+			for _, advancedCluster := range clustersWithTeams.Clusters.Results {
+
+				clusterWithTeams := &ClusterWithTeams{
+					Cluster:       advancedCluster,
+					AssignedTeams: clustersWithTeams.AssignedTeams,
+				}
 				select {
-				case output <- advancedCluster:
+				case output <- clusterWithTeams:
 				case <-ctx.Done():
 					return
 				}
@@ -79,10 +100,10 @@ func ClustersMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 	return output
 }
 
-func ClusterDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AdvancedCluster) (<-chan *mongodbatlas.AdvancedCluster, <-chan *mongodbatlas.AdvancedCluster, <-chan *mongodbatlas.AdvancedCluster, <-chan *mongodbatlas.AdvancedCluster) {
+func ClusterDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClusterWithTeams) (<-chan *ClusterWithTeams, <-chan *mongodbatlas.AdvancedCluster, <-chan *mongodbatlas.AdvancedCluster, <-chan *mongodbatlas.AdvancedCluster) {
 	wg.Add(1)
 	log := ctx.Value(cyLogger).(*zerolog.Logger)
-	outputA, outputB, outputC, outputD := make(chan *mongodbatlas.AdvancedCluster, 10), make(chan *mongodbatlas.AdvancedCluster, 10), make(chan *mongodbatlas.AdvancedCluster, 10), make(chan *mongodbatlas.AdvancedCluster, 10)
+	outputA, outputB, outputC, outputD := make(chan *ClusterWithTeams, 10), make(chan *mongodbatlas.AdvancedCluster, 10), make(chan *mongodbatlas.AdvancedCluster, 10), make(chan *mongodbatlas.AdvancedCluster, 10)
 
 	go func() {
 		defer func() {
@@ -105,19 +126,19 @@ func ClusterDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mo
 			}
 
 			select {
-			case outputB <- advancedCluster:
+			case outputB <- advancedCluster.Cluster:
 			case <-ctx.Done():
 				return
 			}
 
 			select {
-			case outputC <- advancedCluster:
+			case outputC <- advancedCluster.Cluster:
 			case <-ctx.Done():
 				return
 			}
 
 			select {
-			case outputD <- advancedCluster:
+			case outputD <- advancedCluster.Cluster:
 			case <-ctx.Done():
 				return
 			}
@@ -126,15 +147,25 @@ func ClusterDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mo
 	return outputA, outputB, outputC, outputD
 }
 
-func ClusterPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AdvancedCluster) {
+func ClusterPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClusterWithTeams) {
 	wg.Add(1)
 	log := ctx.Value(cyLogger).(*zerolog.Logger)
 	go func() {
 		defer wg.Done()
 
-		for cluster := range input {
+		for clusterWithTeams := range input {
 			log.Debug().Msg("Cluster Printer processing working!")
-			log.Info().Msgf("\tAdvanced Cluster: %+v", cluster)
+			var assignedRoles string
+			var assignedTeams string
+			if clusterWithTeams != nil && clusterWithTeams.AssignedTeams != nil && len(clusterWithTeams.AssignedTeams) > 0 {
+				for _, team := range clusterWithTeams.AssignedTeams {
+					assignedRoles = assignedRoles + strings.Join(team.RoleNames, `','`)
+					assignedTeams = assignedTeams + ` ` + team.TeamID
+				}
+
+			}
+
+			log.Info().Msgf("\tAdvanced Cluster: %+v, Teams Assigned: %+v, Teams Roles: %+v", clusterWithTeams.Cluster, assignedTeams, assignedRoles)
 		}
 	}()
 }
