@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-func SnapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.AdvancedCluster) <-chan *mongodbatlas.CloudProviderSnapshots {
+func SnapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.AdvancedCluster, startPage int) <-chan *mongodbatlas.CloudProviderSnapshots {
 	wg.Add(1)
 	log := ctx.Value(cyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.CloudProviderSnapshots, 10)
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Snapshots Closing channel output!")
+			log.Debug().Msgf("Snapshots Streamer %d Closing channel output!", startPage)
 			close(output)
 			wg.Done()
 		}()
@@ -28,8 +28,9 @@ func SnapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodba
 
 			// Declare the option to get only one team id
 			options := &mongodbatlas.ListOptions{
-				PageNum:      1,
-				ItemsPerPage: 3,
+				//PageNum:      1,
+				PageNum:      startPage,
+				ItemsPerPage: 2,
 				IncludeCount: false,
 			}
 
@@ -50,8 +51,36 @@ func SnapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodba
 					return
 				}
 
-				options.PageNum++
+				options.PageNum = options.PageNum + 2
 			}
+		}
+	}()
+	return output
+}
+
+func SnapshotsAggregator(ctx context.Context, wg *sync.WaitGroup, inputs ...<-chan *mongodbatlas.CloudProviderSnapshots) <-chan *mongodbatlas.CloudProviderSnapshots {
+	wg.Add(1)
+	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	output := make(chan *mongodbatlas.CloudProviderSnapshots, 10)
+	var innerWg sync.WaitGroup
+	go func() {
+		defer func() {
+			innerWg.Wait()
+			log.Debug().Msg("Snapshots Aggregator Closing channel output!")
+			close(output)
+			wg.Done()
+		}()
+
+		for i, in := range inputs {
+			innerWg.Add(1)
+			log.Debug().Msgf("Snapshots Aggregator %d processing working!", i+1)
+			go func(index int, in <-chan *mongodbatlas.CloudProviderSnapshots) {
+				defer innerWg.Done()
+				log.Debug().Msgf("Snapshots Aggregator %d Inner Func processing working!", index)
+				for x := range in {
+					output <- x
+				}
+			}(i+1, in)
 		}
 	}()
 	return output

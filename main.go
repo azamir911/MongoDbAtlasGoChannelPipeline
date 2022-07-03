@@ -89,6 +89,9 @@ func main() {
 
 	var wg sync.WaitGroup
 
+	//																									/ OrganizationPrinter
+	// OrganizationsStreamer -> OrganizationsFilter -> OrganizationsMapper -> OrganizationsDuplicator -|-> AtlasUsersStreamer
+	// 																									\ TeamsStreamer
 	organizationsChA, organizationsCnB, organizationsCnC := OrganizationsDuplicator(
 		ctx, &wg, OrganizationsMapper(
 			ctx, &wg, OrganizationsFilter(
@@ -98,13 +101,9 @@ func main() {
 			),
 		),
 	)
-
 	OrganizationPrinter(ctx, &wg, organizationsChA)
 
-	//																									/ OrganizationPrinter
-	// OrganizationsStreamer -> OrganizationsFilter -> OrganizationsMapper -> OrganizationsDuplicator -|-> AtlasUsersStreamer
-	// 																									\ TeamsStreamer
-
+	// AtlasUsersStreamer -> AtlasUsersResponseMapper -> AtlasUsersFilter -> AtlasUserPrinter
 	AtlasUserPrinter(
 		ctx, &wg, AtlasUsersFilter(
 			ctx, &wg, AtlasUsersResponseMapper(
@@ -115,8 +114,7 @@ func main() {
 		),
 	)
 
-	// AtlasUsersStreamer -> AtlasUsersResponseMapper -> AtlasUsersFilter -> AtlasUserPrinter
-
+	// TeamsStreamer -> TeamsMapper -> TeamFilter -> TeamPrinter
 	TeamPrinter(
 		ctx, &wg, TeamFilter(
 			ctx, &wg, TeamsMapper(
@@ -127,8 +125,10 @@ func main() {
 		),
 	)
 
-	// TeamsStreamer -> TeamsMapper -> TeamFilter -> TeamPrinter
-
+	// 																							    / ProjectPrinter
+	// ProjectsStreamer -> ProjectsFilter -> ProjectsMapper -> ProjectFilter -> ProjectDuplicator -|-> ClustersStreamer
+	//																							   |\ DatabaseUsersStreamer
+	//																							    \ CustomDbRolesStreamer
 	projectsCnA, projectsCnB, projectsCnC, projectsCnD := ProjectDuplicator(
 		ctx, &wg, ProjectFilter(
 			ctx, &wg, ProjectsMapper(
@@ -140,28 +140,23 @@ func main() {
 			),
 		),
 	)
-
-	// 																							    / ProjectPrinter
-	// ProjectsStreamer -> ProjectsFilter -> ProjectsMapper -> ProjectFilter -> ProjectDuplicator -|-> ClustersStreamer
-	//																							   |\ DatabaseUsersStreamer
-	//																							    \ CustomDbRolesStreamer
 	ProjectPrinter(ctx, &wg, projectsCnA)
 
-	// Should execute project team assigned
-	clusterCnA, clusterCnB, clusterCnC, _ := ClusterDuplicator(
+	// 															/ ClusterPrinter
+	// ClustersStreamer -> ClustersMapper -> ClusterDuplicator  |- SnapshotsStreamer
+	//															|\ SnapshotsStreamer
+	// 															|\ SnapshotsRestoreJobsStreamer
+	//															 \ (Should execute project team assigned)
+	clusterCnA, clusterCnB, clusterCnC, clusterCnD := ClusterDuplicator(
 		ctx, &wg, ClustersMapper(
 			ctx, &wg, ClustersStreamer(
 				ctx, &wg, client, projectsCnB,
 			),
 		),
 	)
-
-	// 															/ ClusterPrinter
-	// ClustersStreamer -> ClustersMapper -> ClusterDuplicator  |- SnapshotsStreamer
-	// 															|\ SnapshotsRestoreJobsStreamer
-	//															 \
 	ClusterPrinter(ctx, &wg, clusterCnA)
 
+	// DatabaseUsersStreamer -> DatabaseUsersMapper -> DatabaseUserFilter -> DatabaseUserPrinter
 	DatabaseUserPrinter(
 		ctx, &wg, DatabaseUserFilter(
 			ctx, &wg, DatabaseUsersMapper(
@@ -172,8 +167,7 @@ func main() {
 		),
 	)
 
-	// DatabaseUsersStreamer -> DatabaseUsersMapper -> DatabaseUserFilter -> DatabaseUserPrinter
-
+	// CustomDbRolesStreamer -> CustomDbRolesMapper -> CustomDbRoleFilter -> CustomDbRolePrinter
 	CustomDbRolePrinter(
 		ctx, &wg, CustomDbRoleFilter(
 			ctx, &wg, CustomDbRolesMapper(
@@ -184,38 +178,40 @@ func main() {
 		),
 	)
 
-	// CustomDbRolesStreamer -> CustomDbRolesMapper -> CustomDbRoleFilter -> CustomDbRolePrinter
-
+	// SnapshotsStreamer1 \
+	//						| -> SnapshotsAggregator -> SnapshotsMapper -> SnapshotFilter -> SnapshotPrinter
+	// SnapshotsStreamer2 /
+	streamer1 := SnapshotsStreamer(
+		ctx, &wg, client, clusterCnB, 1,
+	)
+	streamer2 := SnapshotsStreamer(
+		ctx, &wg, client, clusterCnC, 2,
+	)
 	SnapshotPrinter(
 		ctx, &wg, SnapshotFilter(
 			ctx, &wg, SnapshotsMapper(
-				ctx, &wg, SnapshotsStreamer(
-					ctx, &wg, client, clusterCnB,
-				),
-			),
-		),
-	)
-
-	// SnapshotsStreamer -> SnapshotsMapper -> SnapshotFilter -> SnapshotPrinter
-
-	SnapshotRestoreJobPrinter(
-		ctx, &wg, SnapshotRestoreJobFilter(
-			ctx, &wg, SnapshotsRestoreJobsMapper(
-				ctx, &wg, SnapshotsRestoreJobsStreamer(
-					ctx, &wg, client, clusterCnC,
+				ctx, &wg, SnapshotsAggregator(
+					ctx, &wg, streamer1, streamer2,
 				),
 			),
 		),
 	)
 
 	// SnapshotsRestoreJobsStreamer -> SnapshotsRestoreJobsMapper -> SnapshotRestoreJobFilter -> SnapshotRestoreJobPrinter
+	SnapshotRestoreJobPrinter(
+		ctx, &wg, SnapshotRestoreJobFilter(
+			ctx, &wg, SnapshotsRestoreJobsMapper(
+				ctx, &wg, SnapshotsRestoreJobsStreamer(
+					ctx, &wg, client, clusterCnD,
+				),
+			),
+		),
+	)
 
 	//time.Sleep(time.Second * 5)
 	//cancelFunc()
 
 	wg.Wait()
-
-	//close(done)
 }
 
 ////////////////////// Channel Encapsulated in Channel //////////////////////
