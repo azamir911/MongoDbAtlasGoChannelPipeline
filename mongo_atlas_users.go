@@ -31,7 +31,11 @@ func AtlasUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodb
 			for {
 				time.Sleep(time.Second)
 				atlasUsersResponse, _, err := client.Organizations.Users(ctx, organization.ID, options)
-				if err != nil || atlasUsersResponse == nil || len(atlasUsersResponse.Results) == 0 {
+				if err != nil {
+					log.Err(err).Msg("Failed to get organizations users")
+					break
+				}
+				if atlasUsersResponse == nil || len(atlasUsersResponse.Results) == 0 {
 					break
 				}
 

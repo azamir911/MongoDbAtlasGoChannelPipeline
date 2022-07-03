@@ -36,7 +36,11 @@ func SnapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodba
 			for {
 				time.Sleep(time.Second)
 				snapshots, _, err := client.CloudProviderSnapshots.GetAllCloudProviderSnapshots(ctx, snapshotReqPathParameters, options)
-				if err != nil || snapshots == nil || len(snapshots.Results) == 0 {
+				if err != nil {
+					log.Err(err).Msg("Failed to get cloud provider snapshots list")
+					break
+				}
+				if snapshots == nil || len(snapshots.Results) == 0 {
 					break
 				}
 

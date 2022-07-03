@@ -30,7 +30,11 @@ func ProjectsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 		for {
 			time.Sleep(time.Second)
 			projects, _, err := client.Projects.GetAllProjects(ctx, options)
-			if err != nil || projects == nil || len(projects.Results) == 0 {
+			if err != nil {
+				log.Err(err).Msg("Failed to get projects list")
+				break
+			}
+			if projects == nil || len(projects.Results) == 0 {
 				break
 			}
 

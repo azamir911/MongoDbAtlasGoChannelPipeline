@@ -23,7 +23,11 @@ func CustomDbRolesStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 		for project := range input {
 			time.Sleep(time.Second)
 			customDBRoles, _, err := client.CustomDBRoles.List(ctx, project.ID, nil)
-			if err != nil || customDBRoles == nil || len(*customDBRoles) == 0 {
+			if err != nil {
+				log.Err(err).Msg("Failed to get custom DB roles list")
+				break
+			}
+			if customDBRoles == nil || len(*customDBRoles) == 0 {
 				break
 			}
 

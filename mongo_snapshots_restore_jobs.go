@@ -36,7 +36,11 @@ func SnapshotsRestoreJobsStreamer(ctx context.Context, wg *sync.WaitGroup, clien
 			for {
 				time.Sleep(time.Second)
 				snapshotRestoreJobs, _, err := client.CloudProviderSnapshotRestoreJobs.List(ctx, snapshotReqPathParameters, options)
-				if err != nil || snapshotRestoreJobs == nil || len(snapshotRestoreJobs.Results) == 0 {
+				if err != nil {
+					log.Err(err).Msg("Failed to get cloud provider snapshot restore jobs list")
+					break
+				}
+				if snapshotRestoreJobs == nil || len(snapshotRestoreJobs.Results) == 0 {
 					break
 				}
 

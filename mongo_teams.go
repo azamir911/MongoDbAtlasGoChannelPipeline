@@ -31,7 +31,11 @@ func TeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas
 			for {
 				time.Sleep(time.Second)
 				teams, _, err := client.Teams.List(ctx, organization.ID, options)
-				if err != nil || teams == nil || len(teams) == 0 {
+				if err != nil {
+					log.Err(err).Msg("Failed to get teams list")
+					break
+				}
+				if teams == nil || len(teams) == 0 {
 					break
 				}
 

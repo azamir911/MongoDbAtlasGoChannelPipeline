@@ -31,7 +31,11 @@ func ClustersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 			for {
 				time.Sleep(time.Second)
 				advancedClustersResponse, _, err := client.AdvancedClusters.List(ctx, project.ID, options)
-				if err != nil || advancedClustersResponse == nil || len(advancedClustersResponse.Results) == 0 {
+				if err != nil {
+					log.Err(err).Msg("Failed to get advanced clusters list")
+					break
+				}
+				if advancedClustersResponse == nil || len(advancedClustersResponse.Results) == 0 {
 					break
 				}
 

@@ -31,7 +31,11 @@ func DatabaseUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 			for {
 				time.Sleep(time.Second)
 				databaseUsers, _, err := client.DatabaseUsers.List(ctx, project.ID, options)
-				if err != nil || databaseUsers == nil || len(databaseUsers) == 0 {
+				if err != nil {
+					log.Err(err).Msg("Failed to get database users list")
+					break
+				}
+				if databaseUsers == nil || len(databaseUsers) == 0 {
 					break
 				}
 

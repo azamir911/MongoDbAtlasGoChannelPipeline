@@ -33,7 +33,11 @@ func OrganizationsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 		for {
 			time.Sleep(time.Second)
 			organizations, _, err := client.Organizations.List(ctx, options)
-			if err != nil || organizations == nil || len(organizations.Results) == 0 {
+			if err != nil {
+				log.Err(err).Msg("Failed to get organizations list")
+				break
+			}
+			if organizations == nil || len(organizations.Results) == 0 {
 				break
 			}
 
