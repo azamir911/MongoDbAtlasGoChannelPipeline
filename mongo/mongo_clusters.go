@@ -1,4 +1,4 @@
-package main
+package mongo
 
 import (
 	"context"
@@ -19,9 +19,9 @@ type ClusterWithTeams struct {
 	AssignedTeams []*mongodbatlas.Result
 }
 
-func ClustersWithTeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *ProjectWithTeams) <-chan *ClustersWithTeams {
+func clustersWithTeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *ProjectWithTeams) <-chan *ClustersWithTeams {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *ClustersWithTeams, 10)
 
 	go func() {
@@ -68,9 +68,9 @@ func ClustersWithTeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *
 	return output
 }
 
-func ClustersWithTeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClustersWithTeams) <-chan *ClusterWithTeams {
+func clustersWithTeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClustersWithTeams) <-chan *ClusterWithTeams {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *ClusterWithTeams, 10)
 
 	go func() {
@@ -100,9 +100,9 @@ func ClustersWithTeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-ch
 	return output
 }
 
-func ClusterWithTeamsDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClusterWithTeams) (<-chan *ClusterWithTeams, <-chan *ClusterWithTeams) {
+func clusterWithTeamsDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClusterWithTeams) (<-chan *ClusterWithTeams, <-chan *ClusterWithTeams) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	outputA, outputB := make(chan *ClusterWithTeams, 10), make(chan *ClusterWithTeams, 10)
 
 	go func() {
@@ -133,9 +133,9 @@ func ClusterWithTeamsDuplicator(ctx context.Context, wg *sync.WaitGroup, input <
 	return outputA, outputB
 }
 
-func ClusterWithTeamsPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClusterWithTeams) {
+func clusterWithTeamsPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClusterWithTeams) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer wg.Done()
 
@@ -156,9 +156,9 @@ func ClusterWithTeamsPrinter(ctx context.Context, wg *sync.WaitGroup, input <-ch
 	}()
 }
 
-func ClusterWithTeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClusterWithTeams) <-chan *mongodbatlas.AdvancedCluster {
+func clusterWithTeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *ClusterWithTeams) <-chan *mongodbatlas.AdvancedCluster {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.AdvancedCluster, 10)
 
 	go func() {
@@ -182,9 +182,9 @@ func ClusterWithTeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-cha
 	return output
 }
 
-func ClusterDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AdvancedCluster) (<-chan *mongodbatlas.AdvancedCluster, <-chan *mongodbatlas.AdvancedCluster, <-chan *mongodbatlas.AdvancedCluster) {
+func clusterDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AdvancedCluster) (<-chan *mongodbatlas.AdvancedCluster, <-chan *mongodbatlas.AdvancedCluster, <-chan *mongodbatlas.AdvancedCluster) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	outputB, outputC, outputD := make(chan *mongodbatlas.AdvancedCluster, 10), make(chan *mongodbatlas.AdvancedCluster, 10), make(chan *mongodbatlas.AdvancedCluster, 10)
 
 	go func() {

@@ -1,4 +1,4 @@
-package main
+package mongo
 
 import (
 	"context"
@@ -13,9 +13,9 @@ type ProjectWithTeams struct {
 	AssignedTeams []*mongodbatlas.Result
 }
 
-func TeamsAssignedStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Project) <-chan *ProjectWithTeams {
+func teamsAssignedStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Project) <-chan *ProjectWithTeams {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *ProjectWithTeams, 10)
 
 	go func() {

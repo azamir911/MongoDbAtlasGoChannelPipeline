@@ -1,4 +1,4 @@
-package main
+package mongo
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func DatabaseUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Project) <-chan []mongodbatlas.DatabaseUser {
+func databaseUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Project) <-chan []mongodbatlas.DatabaseUser {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan []mongodbatlas.DatabaseUser, 10)
 
 	go func() {
@@ -52,9 +52,9 @@ func DatabaseUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 	return output
 }
 
-func DatabaseUsersMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan []mongodbatlas.DatabaseUser) <-chan mongodbatlas.DatabaseUser {
+func databaseUsersMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan []mongodbatlas.DatabaseUser) <-chan mongodbatlas.DatabaseUser {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan mongodbatlas.DatabaseUser, 10)
 
 	go func() {
@@ -79,9 +79,9 @@ func DatabaseUsersMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan [
 	return output
 }
 
-func DatabaseUserFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.DatabaseUser) <-chan mongodbatlas.DatabaseUser {
+func databaseUserFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.DatabaseUser) <-chan mongodbatlas.DatabaseUser {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan mongodbatlas.DatabaseUser, 10)
 
 	go func() {
@@ -108,9 +108,9 @@ func DatabaseUserFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mo
 	return output
 }
 
-func DatabaseUserPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.DatabaseUser) {
+func databaseUserPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.DatabaseUser) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer wg.Done()
 

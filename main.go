@@ -1,6 +1,7 @@
 package main
 
 import (
+	"MongoDbAtlasGoChannelPipeline/mongo"
 	"context"
 	"encoding/binary"
 	"fmt"
@@ -11,11 +12,6 @@ import (
 	//"log"
 	"math/big"
 	"math/rand"
-	"sync"
-)
-
-const (
-	cyLogger = "cylogger"
 )
 
 func RandomGenerator() <-chan uint64 {
@@ -81,146 +77,15 @@ func main() {
 	//	),
 	//)
 
-	client := Client()
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
 	log := zerolog.New(output).With().Timestamp().Logger()
-	ctx, _ := context.WithCancel(context.WithValue(context.Background(), cyLogger, &log))
+	ctx, _ := context.WithCancel(context.WithValue(context.Background(), mongo.CyLogger, &log))
 
-	var wg sync.WaitGroup
-
-	//																									/ OrganizationPrinter
-	// OrganizationsStreamer -> OrganizationsFilter -> OrganizationsMapper -> OrganizationsDuplicator -|-> AtlasUsersStreamer
-	// 																									\ TeamsStreamer
-	organizationsChA, organizationsCnB, organizationsCnC := OrganizationsDuplicator(
-		ctx, &wg, OrganizationsMapper(
-			ctx, &wg, OrganizationsFilter(
-				ctx, &wg, OrganizationsStreamer(
-					ctx, &wg, client,
-				),
-			),
-		),
-	)
-	OrganizationPrinter(ctx, &wg, organizationsChA)
-
-	// AtlasUsersStreamer -> AtlasUsersResponseMapper -> AtlasUsersFilter -> AtlasUserPrinter
-	AtlasUserPrinter(
-		ctx, &wg, AtlasUsersFilter(
-			ctx, &wg, AtlasUsersResponseMapper(
-				ctx, &wg, AtlasUsersStreamer(
-					ctx, &wg, client, organizationsCnB,
-				),
-			),
-		),
-	)
-
-	// TeamsStreamer -> TeamsMapper -> TeamFilter -> TeamPrinter
-	TeamPrinter(
-		ctx, &wg, TeamFilter(
-			ctx, &wg, TeamsMapper(
-				ctx, &wg, TeamsStreamer(
-					ctx, &wg, client, organizationsCnC,
-				),
-			),
-		),
-	)
-
-	// 																							    / ProjectPrinter
-	// ProjectsStreamer -> ProjectsFilter -> ProjectsMapper -> ProjectFilter -> ProjectDuplicator -|-> ClustersWithTeamsStreamer
-	//																							   |\ DatabaseUsersStreamer
-	//																							    \ CustomDbRolesStreamer
-	projectsCnA, projectsCnB, projectsCnC, projectsCnD := ProjectDuplicator(
-		ctx, &wg, ProjectFilter(
-			ctx, &wg, ProjectsMapper(
-				ctx, &wg, ProjectsFilter(
-					ctx, &wg, ProjectsStreamer(
-						ctx, &wg, client,
-					),
-				),
-			),
-		),
-	)
-	ProjectPrinter(ctx, &wg, projectsCnA)
-
-	// 																					   							/ ClusterWithTeamsPrinter
-	// TeamsAssignedStreamer -> ClustersWithTeamsStreamer -> ClustersWithTeamsMapper -> ClusterWithTeamsDuplicator |- ClusterWithTeamsMapper
-	clusterWithTeamsCnA, clusterWithTeamsCnB := ClusterWithTeamsDuplicator(
-		ctx, &wg, ClustersWithTeamsMapper(
-			ctx, &wg, ClustersWithTeamsStreamer(
-				ctx, &wg, client, TeamsAssignedStreamer(
-					ctx, &wg, client, projectsCnB,
-				),
-			),
-		),
-	)
-	ClusterWithTeamsPrinter(ctx, &wg, clusterWithTeamsCnA)
-
-	// 											    / SnapshotsStreamer
-	// ClusterWithTeamsMapper -> ClusterDuplicator |- SnapshotsStreamer
-	//											    \ SnapshotsRestoreJobsStreamer
-
-	clusterCnA, clusterCnB, clusterCnC := ClusterDuplicator(
-		ctx, &wg, ClusterWithTeamsMapper(
-			ctx, &wg, clusterWithTeamsCnB,
-		),
-	)
-
-	// DatabaseUsersStreamer -> DatabaseUsersMapper -> DatabaseUserFilter -> DatabaseUserPrinter
-	DatabaseUserPrinter(
-		ctx, &wg, DatabaseUserFilter(
-			ctx, &wg, DatabaseUsersMapper(
-				ctx, &wg, DatabaseUsersStreamer(
-					ctx, &wg, client, projectsCnC,
-				),
-			),
-		),
-	)
-
-	// CustomDbRolesStreamer -> CustomDbRolesMapper -> CustomDbRoleFilter -> CustomDbRolePrinter
-	CustomDbRolePrinter(
-		ctx, &wg, CustomDbRoleFilter(
-			ctx, &wg, CustomDbRolesMapper(
-				ctx, &wg, CustomDbRolesStreamer(
-					ctx, &wg, client, projectsCnD,
-				),
-			),
-		),
-	)
-
-	// SnapshotsStreamer1 \
-	//						| -> SnapshotsAggregator -> SnapshotsMapper -> SnapshotFilter -> SnapshotPrinter
-	// SnapshotsStreamer2 /
-	streamer1 := SnapshotsStreamer(
-		ctx, &wg, client, clusterCnA, 1,
-	)
-	streamer2 := SnapshotsStreamer(
-		ctx, &wg, client, clusterCnB, 2,
-	)
-	SnapshotPrinter(
-		ctx, &wg, SnapshotFilter(
-			ctx, &wg, SnapshotsMapper(
-				ctx, &wg, SnapshotsAggregator(
-					ctx, &wg, streamer1, streamer2,
-				),
-			),
-		),
-	)
-
-	// SnapshotsRestoreJobsStreamer -> SnapshotsRestoreJobsMapper -> SnapshotRestoreJobFilter -> SnapshotRestoreJobPrinter
-	SnapshotRestoreJobPrinter(
-		ctx, &wg, SnapshotRestoreJobFilter(
-			ctx, &wg, SnapshotsRestoreJobsMapper(
-				ctx, &wg, SnapshotsRestoreJobsStreamer(
-					ctx, &wg, client, clusterCnC,
-				),
-			),
-		),
-	)
+	mongo.Execute(ctx)
 
 	//time.Sleep(time.Second * 5)
 	//cancelFunc()
-
-	wg.Wait()
 }
 
 ////////////////////// Channel Encapsulated in Channel //////////////////////

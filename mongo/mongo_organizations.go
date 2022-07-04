@@ -1,17 +1,16 @@
-package main
+package mongo
 
 import (
 	"context"
 	"github.com/rs/zerolog"
 	"go.mongodb.org/atlas/mongodbatlas"
-	//"log"
 	"sync"
 	"time"
 )
 
-func OrganizationsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client) <-chan *mongodbatlas.Organizations {
+func organizationsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client) <-chan *mongodbatlas.Organizations {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.Organizations, 10)
 
 	go func() {
@@ -53,9 +52,9 @@ func OrganizationsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 	return output
 }
 
-func OrganizationsFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organizations) <-chan *mongodbatlas.Organizations {
+func organizationsFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organizations) <-chan *mongodbatlas.Organizations {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.Organizations, 10)
 
 	go func() {
@@ -78,9 +77,9 @@ func OrganizationsFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 	return output
 }
 
-func OrganizationsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organizations) <-chan *mongodbatlas.Organization {
+func organizationsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organizations) <-chan *mongodbatlas.Organization {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.Organization, 10)
 
 	go func() {
@@ -105,9 +104,9 @@ func OrganizationsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 	return output
 }
 
-func OrganizationsDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organization) (<-chan *mongodbatlas.Organization, <-chan *mongodbatlas.Organization, <-chan *mongodbatlas.Organization) {
+func organizationsDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organization) (<-chan *mongodbatlas.Organization, <-chan *mongodbatlas.Organization, <-chan *mongodbatlas.Organization) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	outputA, outputB, outputC := make(chan *mongodbatlas.Organization, 10), make(chan *mongodbatlas.Organization, 10), make(chan *mongodbatlas.Organization, 10)
 
 	go func() {
@@ -144,9 +143,9 @@ func OrganizationsDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-ch
 	return outputA, outputB, outputC
 }
 
-func OrganizationPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organization) {
+func organizationPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organization) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer func() {
 			log.Debug().Msg("Organization Printer exit")

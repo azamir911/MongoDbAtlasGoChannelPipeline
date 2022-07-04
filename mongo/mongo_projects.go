@@ -1,4 +1,4 @@
-package main
+package mongo
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func ProjectsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client) <-chan *mongodbatlas.Projects {
+func projectsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client) <-chan *mongodbatlas.Projects {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.Projects, 10)
 
 	go func() {
@@ -50,9 +50,9 @@ func ProjectsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 	return output
 }
 
-func ProjectsFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Projects) <-chan *mongodbatlas.Projects {
+func projectsFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Projects) <-chan *mongodbatlas.Projects {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.Projects, 10)
 
 	go func() {
@@ -75,9 +75,9 @@ func ProjectsFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 	return output
 }
 
-func ProjectsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Projects) <-chan *mongodbatlas.Project {
+func projectsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Projects) <-chan *mongodbatlas.Project {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.Project, 10)
 
 	go func() {
@@ -102,9 +102,9 @@ func ProjectsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 	return output
 }
 
-func ProjectFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Project) <-chan *mongodbatlas.Project {
+func projectFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Project) <-chan *mongodbatlas.Project {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.Project, 10)
 
 	go func() {
@@ -132,9 +132,9 @@ func ProjectFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongod
 	return output
 }
 
-func ProjectDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Project) (<-chan *mongodbatlas.Project, <-chan *mongodbatlas.Project, <-chan *mongodbatlas.Project, <-chan *mongodbatlas.Project) {
+func projectDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Project) (<-chan *mongodbatlas.Project, <-chan *mongodbatlas.Project, <-chan *mongodbatlas.Project, <-chan *mongodbatlas.Project) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	outputA, outputB, outputC, outputD := make(chan *mongodbatlas.Project, 10), make(chan *mongodbatlas.Project, 10), make(chan *mongodbatlas.Project, 10), make(chan *mongodbatlas.Project, 10)
 
 	go func() {
@@ -180,9 +180,9 @@ func ProjectDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mo
 	return outputA, outputB, outputC, outputD
 }
 
-func ProjectPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Project) {
+func projectPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Project) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer wg.Done()
 

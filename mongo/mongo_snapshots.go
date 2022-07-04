@@ -1,4 +1,4 @@
-package main
+package mongo
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func SnapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.AdvancedCluster, startPage int) <-chan *mongodbatlas.CloudProviderSnapshots {
+func snapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.AdvancedCluster, startPage int) <-chan *mongodbatlas.CloudProviderSnapshots {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.CloudProviderSnapshots, 10)
 
 	go func() {
@@ -58,9 +58,9 @@ func SnapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodba
 	return output
 }
 
-func SnapshotsAggregator(ctx context.Context, wg *sync.WaitGroup, inputs ...<-chan *mongodbatlas.CloudProviderSnapshots) <-chan *mongodbatlas.CloudProviderSnapshots {
+func snapshotsAggregator(ctx context.Context, wg *sync.WaitGroup, inputs ...<-chan *mongodbatlas.CloudProviderSnapshots) <-chan *mongodbatlas.CloudProviderSnapshots {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.CloudProviderSnapshots, 10)
 	var innerWg sync.WaitGroup
 	go func() {
@@ -86,9 +86,9 @@ func SnapshotsAggregator(ctx context.Context, wg *sync.WaitGroup, inputs ...<-ch
 	return output
 }
 
-func SnapshotsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshots) <-chan *mongodbatlas.CloudProviderSnapshot {
+func snapshotsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshots) <-chan *mongodbatlas.CloudProviderSnapshot {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.CloudProviderSnapshot, 10)
 
 	go func() {
@@ -113,9 +113,9 @@ func SnapshotsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mong
 	return output
 }
 
-func SnapshotFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshot) <-chan *mongodbatlas.CloudProviderSnapshot {
+func snapshotFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshot) <-chan *mongodbatlas.CloudProviderSnapshot {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.CloudProviderSnapshot, 10)
 
 	go func() {
@@ -143,9 +143,9 @@ func SnapshotFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 	return output
 }
 
-func SnapshotPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshot) {
+func snapshotPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshot) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer func() {
 			log.Debug().Msg("Snapshot Printer exit")

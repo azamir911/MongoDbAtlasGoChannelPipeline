@@ -1,4 +1,4 @@
-package main
+package mongo
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func SnapshotsRestoreJobsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.AdvancedCluster) <-chan *mongodbatlas.CloudProviderSnapshotRestoreJobs {
+func snapshotsRestoreJobsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.AdvancedCluster) <-chan *mongodbatlas.CloudProviderSnapshotRestoreJobs {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.CloudProviderSnapshotRestoreJobs, 10)
 
 	go func() {
@@ -57,9 +57,9 @@ func SnapshotsRestoreJobsStreamer(ctx context.Context, wg *sync.WaitGroup, clien
 	return output
 }
 
-func SnapshotsRestoreJobsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshotRestoreJobs) <-chan *mongodbatlas.CloudProviderSnapshotRestoreJob {
+func snapshotsRestoreJobsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshotRestoreJobs) <-chan *mongodbatlas.CloudProviderSnapshotRestoreJob {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.CloudProviderSnapshotRestoreJob, 10)
 
 	go func() {
@@ -84,9 +84,9 @@ func SnapshotsRestoreJobsMapper(ctx context.Context, wg *sync.WaitGroup, input <
 	return output
 }
 
-func SnapshotRestoreJobFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshotRestoreJob) <-chan *mongodbatlas.CloudProviderSnapshotRestoreJob {
+func snapshotRestoreJobFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshotRestoreJob) <-chan *mongodbatlas.CloudProviderSnapshotRestoreJob {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.CloudProviderSnapshotRestoreJob, 10)
 
 	go func() {
@@ -114,9 +114,9 @@ func SnapshotRestoreJobFilter(ctx context.Context, wg *sync.WaitGroup, input <-c
 	return output
 }
 
-func SnapshotRestoreJobPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshotRestoreJob) {
+func snapshotRestoreJobPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.CloudProviderSnapshotRestoreJob) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer func() {
 			log.Debug().Msg("Snapshot Restore Job Printer exit")

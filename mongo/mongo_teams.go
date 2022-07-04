@@ -1,4 +1,4 @@
-package main
+package mongo
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func TeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Organization) <-chan []mongodbatlas.Team {
+func teamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Organization) <-chan []mongodbatlas.Team {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan []mongodbatlas.Team, 10)
 
 	go func() {
@@ -52,9 +52,9 @@ func TeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas
 	return output
 }
 
-func TeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan []mongodbatlas.Team) <-chan mongodbatlas.Team {
+func teamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan []mongodbatlas.Team) <-chan mongodbatlas.Team {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan mongodbatlas.Team, 10)
 
 	go func() {
@@ -79,9 +79,9 @@ func TeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan []mongodb
 	return output
 }
 
-func TeamFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.Team) <-chan mongodbatlas.Team {
+func teamFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.Team) <-chan mongodbatlas.Team {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan mongodbatlas.Team, 10)
 
 	go func() {
@@ -106,9 +106,9 @@ func TeamFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatl
 	return output
 }
 
-func TeamPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.Team) {
+func teamPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.Team) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer wg.Done()
 

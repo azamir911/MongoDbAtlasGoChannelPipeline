@@ -1,9 +1,13 @@
-package main
+package mongo
 
 import (
 	"github.com/mongodb-forks/digest"
 	"go.mongodb.org/atlas/mongodbatlas"
 	"log"
+)
+
+const (
+	CyLogger = "cylogger"
 )
 
 func Client() *mongodbatlas.Client {

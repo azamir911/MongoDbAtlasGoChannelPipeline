@@ -1,4 +1,4 @@
-package main
+package mongo
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func CustomDbRolesStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Project) <-chan *[]mongodbatlas.CustomDBRole {
+func customDbRolesStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Project) <-chan *[]mongodbatlas.CustomDBRole {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *[]mongodbatlas.CustomDBRole, 10)
 
 	go func() {
@@ -41,9 +41,9 @@ func CustomDbRolesStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 	return output
 }
 
-func CustomDbRolesMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *[]mongodbatlas.CustomDBRole) <-chan mongodbatlas.CustomDBRole {
+func customDbRolesMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *[]mongodbatlas.CustomDBRole) <-chan mongodbatlas.CustomDBRole {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan mongodbatlas.CustomDBRole, 10)
 
 	go func() {
@@ -68,9 +68,9 @@ func CustomDbRolesMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 	return output
 }
 
-func CustomDbRoleFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.CustomDBRole) <-chan mongodbatlas.CustomDBRole {
+func customDbRoleFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.CustomDBRole) <-chan mongodbatlas.CustomDBRole {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan mongodbatlas.CustomDBRole, 10)
 
 	go func() {
@@ -95,9 +95,9 @@ func CustomDbRoleFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mo
 	return output
 }
 
-func CustomDbRolePrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.CustomDBRole) {
+func customDbRolePrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.CustomDBRole) {
 	wg.Add(1)
-	log := ctx.Value(cyLogger).(*zerolog.Logger)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer wg.Done()
 
