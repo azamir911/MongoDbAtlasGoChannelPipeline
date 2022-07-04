@@ -126,7 +126,7 @@ func main() {
 	)
 
 	// 																							    / ProjectPrinter
-	// ProjectsStreamer -> ProjectsFilter -> ProjectsMapper -> ProjectFilter -> ProjectDuplicator -|-> ClustersStreamer
+	// ProjectsStreamer -> ProjectsFilter -> ProjectsMapper -> ProjectFilter -> ProjectDuplicator -|-> ClustersWithTeamsStreamer
 	//																							   |\ DatabaseUsersStreamer
 	//																							    \ CustomDbRolesStreamer
 	projectsCnA, projectsCnB, projectsCnC, projectsCnD := ProjectDuplicator(
@@ -142,21 +142,28 @@ func main() {
 	)
 	ProjectPrinter(ctx, &wg, projectsCnA)
 
-	// sdasd
-	// 																					   / ClusterPrinter
-	// TeamsAssignedStreamer -> ClustersStreamer -> ClustersMapper -> ClusterDuplicator  |- SnapshotsStreamer
-	//																					 |\ SnapshotsStreamer
-	// 																					  \ SnapshotsRestoreJobsStreamer
-	clusterCnA, clusterCnB, clusterCnC, clusterCnD := ClusterDuplicator(
-		ctx, &wg, ClustersMapper(
-			ctx, &wg, ClustersStreamer(
+	// 																					   							/ ClusterWithTeamsPrinter
+	// TeamsAssignedStreamer -> ClustersWithTeamsStreamer -> ClustersWithTeamsMapper -> ClusterWithTeamsDuplicator |- ClusterWithTeamsMapper
+	clusterWithTeamsCnA, clusterWithTeamsCnB := ClusterWithTeamsDuplicator(
+		ctx, &wg, ClustersWithTeamsMapper(
+			ctx, &wg, ClustersWithTeamsStreamer(
 				ctx, &wg, client, TeamsAssignedStreamer(
 					ctx, &wg, client, projectsCnB,
 				),
 			),
 		),
 	)
-	ClusterPrinter(ctx, &wg, clusterCnA)
+	ClusterWithTeamsPrinter(ctx, &wg, clusterWithTeamsCnA)
+
+	// 											    / SnapshotsStreamer
+	// ClusterWithTeamsMapper -> ClusterDuplicator |- SnapshotsStreamer
+	//											    \ SnapshotsRestoreJobsStreamer
+
+	clusterCnA, clusterCnB, clusterCnC := ClusterDuplicator(
+		ctx, &wg, ClusterWithTeamsMapper(
+			ctx, &wg, clusterWithTeamsCnB,
+		),
+	)
 
 	// DatabaseUsersStreamer -> DatabaseUsersMapper -> DatabaseUserFilter -> DatabaseUserPrinter
 	DatabaseUserPrinter(
@@ -184,10 +191,10 @@ func main() {
 	//						| -> SnapshotsAggregator -> SnapshotsMapper -> SnapshotFilter -> SnapshotPrinter
 	// SnapshotsStreamer2 /
 	streamer1 := SnapshotsStreamer(
-		ctx, &wg, client, clusterCnB, 1,
+		ctx, &wg, client, clusterCnA, 1,
 	)
 	streamer2 := SnapshotsStreamer(
-		ctx, &wg, client, clusterCnC, 2,
+		ctx, &wg, client, clusterCnB, 2,
 	)
 	SnapshotPrinter(
 		ctx, &wg, SnapshotFilter(
@@ -204,7 +211,7 @@ func main() {
 		ctx, &wg, SnapshotRestoreJobFilter(
 			ctx, &wg, SnapshotsRestoreJobsMapper(
 				ctx, &wg, SnapshotsRestoreJobsStreamer(
-					ctx, &wg, client, clusterCnD,
+					ctx, &wg, client, clusterCnC,
 				),
 			),
 		),
