@@ -142,7 +142,8 @@ func main() {
 	)
 	ProjectPrinter(ctx, &wg, projectsCnA)
 
-	// 																					  / ClusterPrinter
+	// sdasd
+	// 																					   / ClusterPrinter
 	// TeamsAssignedStreamer -> ClustersStreamer -> ClustersMapper -> ClusterDuplicator  |- SnapshotsStreamer
 	//																					 |\ SnapshotsStreamer
 	// 																					  \ SnapshotsRestoreJobsStreamer
