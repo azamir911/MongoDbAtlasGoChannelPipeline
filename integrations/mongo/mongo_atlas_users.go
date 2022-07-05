@@ -1,7 +1,7 @@
 package mongo
 
 import (
-	"MongoDbAtlasGoChannelPipeline/assetdata_model"
+	"MongoDbAtlasGoChannelPipeline/pkg/model/assetdata_model"
 	"context"
 	"fmt"
 	"github.com/google/uuid"

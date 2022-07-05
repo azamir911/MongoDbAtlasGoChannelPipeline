@@ -1,7 +1,7 @@
 package main
 
 import (
-	"MongoDbAtlasGoChannelPipeline/mongo"
+	"MongoDbAtlasGoChannelPipeline/integrations/mongo"
 	"context"
 	"encoding/binary"
 	"fmt"
