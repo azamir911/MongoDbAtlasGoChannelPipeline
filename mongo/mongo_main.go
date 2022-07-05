@@ -24,12 +24,20 @@ func Execute(ctx context.Context) {
 	organizationPrinter(ctx, &wg, organizationsChA)
 
 	// atlasUsersStreamer -> atlasUsersResponseMapper -> atlasUsersFilter -> atlasUserPrinter
-	atlasUserPrinter(
+	atlasUserCh := atlasUserPrinter(
 		ctx, &wg, atlasUsersFilter(
 			ctx, &wg, atlasUsersResponseMapper(
 				ctx, &wg, atlasUsersStreamer(
 					ctx, &wg, client, organizationsCnB,
 				),
+			),
+		),
+	)
+
+	normalizedUserAssetPrinter(
+		ctx, &wg, normalizedUserAssetCreator(
+			ctx, &wg, normalizedUserCreator(
+				ctx, &wg, atlasUserCh,
 			),
 		),
 	)
