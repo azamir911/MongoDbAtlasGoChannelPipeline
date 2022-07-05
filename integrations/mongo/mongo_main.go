@@ -1,7 +1,9 @@
 package mongo
 
 import (
+	"MongoDbAtlasGoChannelPipeline/pkg/model/assetdata_model"
 	"context"
+	"github.com/rs/zerolog"
 	"sync"
 )
 
@@ -23,7 +25,7 @@ func Execute(ctx context.Context) {
 	)
 	organizationPrinter(ctx, &wg, organizationsChA)
 
-	// atlasUsersStreamer -> atlasUsersResponseMapper -> atlasUsersFilter -> atlasUserPrinter
+	// atlasUsersStreamer -> atlasUsersResponseMapper -> atlasUsersFilter -> atlasUserPrinter -> normalizedAtlasUserCreator
 	atlasUserCh := atlasUserPrinter(
 		ctx, &wg, atlasUsersFilter(
 			ctx, &wg, atlasUsersResponseMapper(
@@ -34,11 +36,10 @@ func Execute(ctx context.Context) {
 		),
 	)
 
-	normalizedUserAssetPrinter(
-		ctx, &wg, normalizedUserAssetCreator(
-			ctx, &wg, normalizedUserCreator(
-				ctx, &wg, atlasUserCh,
-			),
+	// normalizedAtlasUserCreator -> normalizedAtlasUserAssetCreator -> normalizedAssetAggregator
+	normalizedUserAssetsCh := normalizedAtlasUserAssetCreator(
+		ctx, &wg, normalizedAtlasUserCreator(
+			ctx, &wg, atlasUserCh,
 		),
 	)
 
@@ -145,5 +146,70 @@ func Execute(ctx context.Context) {
 		),
 	)
 
+	// normalizedAssetAggregator -> normalizedAssetPrinter
+	normalizedAssetPrinter(
+		ctx, &wg, normalizedAssetAggregator(
+			ctx, &wg, normalizedUserAssetsCh,
+		),
+	)
+
 	wg.Wait()
+}
+
+func normalizedAssetAggregator(ctx context.Context, wg *sync.WaitGroup, inputs ...<-chan *assetdata_model.NormalizedAsset) <-chan *assetdata_model.NormalizedAsset {
+	wg.Add(1)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
+	output := make(chan *assetdata_model.NormalizedAsset, 10)
+	var innerWg sync.WaitGroup
+	go func() {
+		defer func() {
+			innerWg.Wait()
+			log.Debug().Msg("Normalized Asset Aggregator Closing channel output!")
+			close(output)
+			wg.Done()
+		}()
+
+		for i, in := range inputs {
+			innerWg.Add(1)
+			log.Debug().Msgf("Normalized Asset Aggregator %d processing working!", i+1)
+			go func(index int, in <-chan *assetdata_model.NormalizedAsset) {
+				defer innerWg.Done()
+				log.Debug().Msgf("Normalized Asset Aggregator %d Inner Func processing working!", index)
+				for x := range in {
+					output <- x
+				}
+			}(i+1, in)
+		}
+	}()
+	return output
+}
+
+func normalizedAssetPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
+	wg.Add(1)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
+
+	go func() {
+		defer wg.Done()
+
+		for normalizedAsset := range input {
+			log.Debug().Msg("Atlas Normalized Asset Printer processing working!")
+			log.Info().Msgf("\tNormalized Asset: %+v %+v", normalizedAsset, normalizedAsset.Data)
+		}
+	}()
+}
+
+func normalizedUserAssetEmptitator(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
+	wg.Add(1)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
+	go func() {
+		defer func() {
+			log.Debug().Msg("Empty Atlas Normalized Asset Printer exit")
+			wg.Done()
+		}()
+
+		for normalizedAsset := range input {
+			log.Debug().Msg("Empty Atlas Normalized Asset Printer processing working!")
+			log.Debug().Msgf("\tEmpty Normalized Asset: %+v %+v", normalizedAsset, normalizedAsset.Data)
+		}
+	}()
 }

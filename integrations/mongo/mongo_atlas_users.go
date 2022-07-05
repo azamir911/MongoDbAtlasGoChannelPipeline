@@ -56,10 +56,10 @@ func atlasUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodb
 	return output
 }
 
-func atlasUsersResponseMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AtlasUsersResponse) <-chan mongodbatlas.AtlasUser {
+func atlasUsersResponseMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AtlasUsersResponse) <-chan *mongodbatlas.AtlasUser {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
-	output := make(chan mongodbatlas.AtlasUser, 10)
+	output := make(chan *mongodbatlas.AtlasUser, 10)
 
 	go func() {
 		defer func() {
@@ -72,8 +72,9 @@ func atlasUsersResponseMapper(ctx context.Context, wg *sync.WaitGroup, input <-c
 			log.Debug().Msg("Atlas User Mapper processing working!")
 			time.Sleep(time.Second)
 			for _, atlasUser := range atlasUsersResponse.Results {
+				atlasUser := atlasUser
 				select {
-				case output <- atlasUser:
+				case output <- &atlasUser:
 				case <-ctx.Done():
 					return
 				}
@@ -83,10 +84,10 @@ func atlasUsersResponseMapper(ctx context.Context, wg *sync.WaitGroup, input <-c
 	return output
 }
 
-func atlasUsersFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.AtlasUser) <-chan mongodbatlas.AtlasUser {
+func atlasUsersFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AtlasUser) <-chan *mongodbatlas.AtlasUser {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
-	output := make(chan mongodbatlas.AtlasUser, 10)
+	output := make(chan *mongodbatlas.AtlasUser, 10)
 
 	go func() {
 		defer func() {
@@ -112,10 +113,10 @@ func atlasUsersFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mong
 	return output
 }
 
-func atlasUserPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.AtlasUser) <-chan mongodbatlas.AtlasUser {
+func atlasUserPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AtlasUser) <-chan *mongodbatlas.AtlasUser {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
-	output := make(chan mongodbatlas.AtlasUser, 10)
+	output := make(chan *mongodbatlas.AtlasUser, 10)
 
 	go func() {
 		defer func() {
@@ -139,7 +140,7 @@ func atlasUserPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan mong
 	return output
 }
 
-func normalizedUserCreator(ctx context.Context, wg *sync.WaitGroup, input <-chan mongodbatlas.AtlasUser) <-chan *assetdata_model.User {
+func normalizedAtlasUserCreator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AtlasUser) <-chan *assetdata_model.User {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *assetdata_model.User, 10)
@@ -154,8 +155,8 @@ func normalizedUserCreator(ctx context.Context, wg *sync.WaitGroup, input <-chan
 		for user := range input {
 			log.Debug().Msg("Atlas Normalized User Creator processing working!")
 
-			groupIds := extractAtlasUserGroupIds(&user)
-			roles, isAdmin := extractAtlasUserRoles(&user)
+			groupIds := extractAtlasUserGroupIds(user)
+			roles, isAdmin := extractAtlasUserRoles(user)
 
 			// Name is a concatenation of first name and last name
 			name := strings.TrimSpace(fmt.Sprintf("%s %s", user.FirstName, user.LastName))
@@ -223,7 +224,7 @@ func extractAtlasUserRoles(user *mongodbatlas.AtlasUser) (roles []assetdata_mode
 	return roles, isAdmin
 }
 
-func normalizedUserAssetCreator(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.User) <-chan *assetdata_model.NormalizedAsset {
+func normalizedAtlasUserAssetCreator(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.User) <-chan *assetdata_model.NormalizedAsset {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *assetdata_model.NormalizedAsset, 10)
@@ -255,18 +256,4 @@ func normalizedUserAssetCreator(ctx context.Context, wg *sync.WaitGroup, input <
 	}()
 
 	return output
-}
-
-func normalizedUserAssetPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
-	wg.Add(1)
-	log := ctx.Value(CyLogger).(*zerolog.Logger)
-
-	go func() {
-		defer wg.Done()
-
-		for normalizedAsset := range input {
-			log.Debug().Msg("Atlas Normalized User Asset Printer processing working!")
-			log.Info().Msgf("\tNormalized User: %+v %+v", normalizedAsset, normalizedAsset.Data)
-		}
-	}()
 }
