@@ -147,13 +147,13 @@ func normalizedAtlasUserCreator(ctx context.Context, wg *sync.WaitGroup, input <
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Atlas Normalized User Creator Closing channel output!")
+			log.Debug().Msg("Normalized Atlas User Creator Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
 
 		for user := range input {
-			log.Debug().Msg("Atlas Normalized User Creator processing working!")
+			log.Debug().Msg("Normalized Atlas User Creator processing working!")
 
 			groupIds := extractAtlasUserGroupIds(user)
 			roles, isAdmin := extractAtlasUserRoles(user)
@@ -224,7 +224,7 @@ func extractAtlasUserRoles(user *mongodbatlas.AtlasUser) (roles []assetdata_mode
 	return roles, isAdmin
 }
 
-func normalizedAtlasUserAssetCreator(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.User) <-chan *assetdata_model.NormalizedAsset {
+func normalizedUserAssetCreator(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.User) <-chan *assetdata_model.NormalizedAsset {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *assetdata_model.NormalizedAsset, 10)

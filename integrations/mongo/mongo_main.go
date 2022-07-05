@@ -36,8 +36,8 @@ func Execute(ctx context.Context) {
 		),
 	)
 
-	// normalizedAtlasUserCreator -> normalizedAtlasUserAssetCreator -> normalizedAssetAggregator
-	normalizedUserAssetsCh := normalizedAtlasUserAssetCreator(
+	// normalizedAtlasUserCreator -> normalizedUserAssetCreator -> normalizedAssetAggregator
+	normalizedUserAssetsChA := normalizedUserAssetCreator(
 		ctx, &wg, normalizedAtlasUserCreator(
 			ctx, &wg, atlasUserCh,
 		),
@@ -95,13 +95,20 @@ func Execute(ctx context.Context) {
 	)
 
 	// databaseUsersStreamer -> databaseUsersMapper -> databaseUserFilter -> databaseUserPrinter
-	databaseUserPrinter(
+	databaseUserCh := databaseUserPrinter(
 		ctx, &wg, databaseUserFilter(
 			ctx, &wg, databaseUsersMapper(
 				ctx, &wg, databaseUsersStreamer(
 					ctx, &wg, client, projectsCnC,
 				),
 			),
+		),
+	)
+
+	// normalizedDatabaseUserCreator -> normalizedUserAssetCreator -> normalizedAssetAggregator
+	normalizedUserAssetsChB := normalizedUserAssetCreator(
+		ctx, &wg, normalizedDatabaseUserCreator(
+			ctx, &wg, databaseUserCh,
 		),
 	)
 
@@ -146,10 +153,12 @@ func Execute(ctx context.Context) {
 		),
 	)
 
-	// normalizedAssetAggregator -> normalizedAssetPrinter
+	// normalizedUserAssetCreator (atlas)  	 \
+	// 							   			  | -> normalizedAssetAggregator -> normalizedAssetPrinter
+	// normalizedUserAssetCreator (database) /
 	normalizedAssetPrinter(
 		ctx, &wg, normalizedAssetAggregator(
-			ctx, &wg, normalizedUserAssetsCh,
+			ctx, &wg, normalizedUserAssetsChA, normalizedUserAssetsChB,
 		),
 	)
 
@@ -198,7 +207,7 @@ func normalizedAssetPrinter(ctx context.Context, wg *sync.WaitGroup, input <-cha
 	}()
 }
 
-func normalizedUserAssetEmptitator(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
+func normalizedUserAssetCleaner(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
