@@ -7,8 +7,13 @@ import (
 	"sync"
 )
 
-func Execute(ctx context.Context) {
+func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh chan<- *assetdata_model.NormalizedAsset) {
 	var wg sync.WaitGroup
+
+	defer func() {
+		close(normalizedAssetsCh)
+		outerWg.Done()
+	}()
 
 	client := Client()
 	//																									/ organizationPrinter
@@ -154,43 +159,46 @@ func Execute(ctx context.Context) {
 	)
 
 	// normalizedUserAssetCreator (atlas)  	 \
-	// 							   			  | -> normalizedAssetAggregator -> normalizedAssetPrinter
+	// 							   			  | -> normalizedAssetAggregator
 	// normalizedUserAssetCreator (database) /
-	normalizedAssetPrinter(
-		ctx, &wg, normalizedAssetAggregator(
-			ctx, &wg, normalizedUserAssetsChA, normalizedUserAssetsChB,
-		),
+	normalizedAssetAggregator(
+		ctx, normalizedAssetsCh, &wg, normalizedUserAssetsChA, normalizedUserAssetsChB,
 	)
 
 	wg.Wait()
 }
 
-func normalizedAssetAggregator(ctx context.Context, wg *sync.WaitGroup, inputs ...<-chan *assetdata_model.NormalizedAsset) <-chan *assetdata_model.NormalizedAsset {
+func DoExecute(ctx context.Context, wg *sync.WaitGroup) <-chan *assetdata_model.NormalizedAsset {
+	wg.Add(1)
+	normalizedAssetsCh := make(chan *assetdata_model.NormalizedAsset, 10)
+	go execute(ctx, wg, normalizedAssetsCh)
+
+	return normalizedAssetsCh
+}
+
+func normalizedAssetAggregator(ctx context.Context, output chan<- *assetdata_model.NormalizedAsset, wg *sync.WaitGroup, inputs ...<-chan *assetdata_model.NormalizedAsset) {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
-	output := make(chan *assetdata_model.NormalizedAsset, 10)
 	var innerWg sync.WaitGroup
-	go func() {
+	go func(output chan<- *assetdata_model.NormalizedAsset) {
 		defer func() {
 			innerWg.Wait()
 			log.Debug().Msg("Normalized Asset Aggregator Closing channel output!")
-			close(output)
 			wg.Done()
 		}()
 
 		for i, in := range inputs {
 			innerWg.Add(1)
 			log.Debug().Msgf("Normalized Asset Aggregator %d processing working!", i+1)
-			go func(index int, in <-chan *assetdata_model.NormalizedAsset) {
+			go func(output chan<- *assetdata_model.NormalizedAsset, index int, in <-chan *assetdata_model.NormalizedAsset) {
 				defer innerWg.Done()
 				log.Debug().Msgf("Normalized Asset Aggregator %d Inner Func processing working!", index)
 				for x := range in {
 					output <- x
 				}
-			}(i+1, in)
+			}(output, i+1, in)
 		}
-	}()
-	return output
+	}(output)
 }
 
 func normalizedAssetPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {

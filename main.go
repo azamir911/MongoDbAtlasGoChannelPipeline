@@ -2,14 +2,15 @@ package main
 
 import (
 	"MongoDbAtlasGoChannelPipeline/integrations/mongo"
+	"MongoDbAtlasGoChannelPipeline/pkg/model/assetdata_model"
 	"context"
 	"encoding/binary"
 	"fmt"
 	"github.com/rs/zerolog"
 	"os"
+	"sync"
 	"time"
 
-	//"log"
 	"math/big"
 	"math/rand"
 )
@@ -68,6 +69,10 @@ func Printer(input <-chan uint64) {
 	}
 }
 
+const (
+	CyLogger = "cylogger"
+)
+
 func main() {
 	//Printer(
 	//	Filter(
@@ -80,12 +85,31 @@ func main() {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
 	log := zerolog.New(output).With().Timestamp().Logger()
-	ctx, _ := context.WithCancel(context.WithValue(context.Background(), mongo.CyLogger, &log))
+	ctx, _ := context.WithCancel(context.WithValue(context.Background(), CyLogger, &log))
 
-	mongo.Execute(ctx)
+	var wg sync.WaitGroup
+
+	mongoNormalizedAssetsCh := mongo.DoExecute(ctx, &wg)
+	normalizedAssetPrinter(ctx, &wg, mongoNormalizedAssetsCh)
+
+	wg.Wait()
 
 	//time.Sleep(time.Second * 5)
 	//cancelFunc()
+}
+
+func normalizedAssetPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
+	wg.Add(1)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
+
+	go func() {
+		defer wg.Done()
+
+		for normalizedAsset := range input {
+			log.Debug().Msg("Atlas Normalized Asset Printer processing working!")
+			log.Info().Msgf("\tNormalized Asset: %+v %+v", normalizedAsset, normalizedAsset.Data)
+		}
+	}()
 }
 
 ////////////////////// Channel Encapsulated in Channel //////////////////////
