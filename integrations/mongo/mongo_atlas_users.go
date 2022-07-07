@@ -239,7 +239,7 @@ func normalizedUserAssetCreator(ctx context.Context, wg *sync.WaitGroup, input <
 		for user := range input {
 			log.Debug().Msg("Atlas Normalized User Asset Creator processing working!")
 
-			userAsset := &assetdata_model.NormalizedAsset{
+			asset := &assetdata_model.NormalizedAsset{
 				Id:            uuid.New(),
 				AccountId:     "uniqueConnectionKey",
 				IntegrationId: 60, //common.MONGODB_ATLAS,
@@ -248,7 +248,7 @@ func normalizedUserAssetCreator(ctx context.Context, wg *sync.WaitGroup, input <
 			}
 
 			select {
-			case output <- userAsset:
+			case output <- asset:
 			case <-ctx.Done():
 				return
 			}

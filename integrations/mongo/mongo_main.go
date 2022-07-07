@@ -48,12 +48,16 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 		),
 	)
 
-	// teamsStreamer -> teamsMapper -> teamFilter -> teamPrinter
-	teamPrinter(
-		ctx, &wg, teamFilter(
-			ctx, &wg, teamsMapper(
-				ctx, &wg, teamsStreamer(
-					ctx, &wg, client, organizationsCnC,
+	// teamsStreamer -> teamsMapper -> teamFilter -> teamPrinter -> normalizedAtlasTeamCreator -> normalizedTeamAssetCreator -> normalizedAssetAggregator
+	normalizedGroupAssetsCh := normalizedTeamAssetCreator(
+		ctx, &wg, normalizedAtlasTeamCreator(
+			ctx, &wg, teamPrinter(
+				ctx, &wg, teamFilter(
+					ctx, &wg, teamsMapper(
+						ctx, &wg, teamsStreamer(
+							ctx, &wg, client, organizationsCnC,
+						),
+					),
 				),
 			),
 		),
@@ -162,7 +166,7 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 	// 							   			  | -> normalizedAssetAggregator
 	// normalizedUserAssetCreator (database) /
 	normalizedAssetAggregator(
-		ctx, normalizedAssetsCh, &wg, normalizedUserAssetsChA, normalizedUserAssetsChB,
+		ctx, normalizedAssetsCh, &wg, normalizedUserAssetsChA, normalizedUserAssetsChB, normalizedGroupAssetsCh,
 	)
 
 	wg.Wait()
@@ -199,20 +203,6 @@ func normalizedAssetAggregator(ctx context.Context, output chan<- *assetdata_mod
 			}(output, i+1, in)
 		}
 	}(output)
-}
-
-func normalizedAssetPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
-	wg.Add(1)
-	log := ctx.Value(CyLogger).(*zerolog.Logger)
-
-	go func() {
-		defer wg.Done()
-
-		for normalizedAsset := range input {
-			log.Debug().Msg("Atlas Normalized Asset Printer processing working!")
-			log.Info().Msgf("\tNormalized Asset: %+v %+v", normalizedAsset, normalizedAsset.Data)
-		}
-	}()
 }
 
 func normalizedUserAssetCleaner(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
