@@ -30,21 +30,18 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 	)
 	organizationPrinter(ctx, &wg, organizationsChA)
 
-	// atlasUsersStreamer -> atlasUsersResponseMapper -> atlasUsersFilter -> atlasUserPrinter -> normalizedAtlasUserCreator
-	atlasUserCh := atlasUserPrinter(
-		ctx, &wg, atlasUsersFilter(
-			ctx, &wg, atlasUsersResponseMapper(
-				ctx, &wg, atlasUsersStreamer(
-					ctx, &wg, client, organizationsCnB,
-				),
-			),
-		),
-	)
-
-	// normalizedAtlasUserCreator -> normalizedUserAssetCreator -> normalizedAssetAggregator
+	// atlasUsersStreamer -> atlasUsersResponseMapper -> atlasUsersFilter -> atlasUserPrinter -> normalizedAtlasUserCreator -> normalizedAtlasUserCreator -> normalizedUserAssetCreator -> normalizedAssetAggregator
 	normalizedUserAssetsChA := normalizedUserAssetCreator(
 		ctx, &wg, normalizedAtlasUserCreator(
-			ctx, &wg, atlasUserCh,
+			ctx, &wg, atlasUserPrinter(
+				ctx, &wg, atlasUsersFilter(
+					ctx, &wg, atlasUsersResponseMapper(
+						ctx, &wg, atlasUsersStreamer(
+							ctx, &wg, client, organizationsCnB,
+						),
+					),
+				),
+			),
 		),
 	)
 
@@ -103,21 +100,18 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 		),
 	)
 
-	// databaseUsersStreamer -> databaseUsersMapper -> databaseUserFilter -> databaseUserPrinter
-	databaseUserCh := databaseUserPrinter(
-		ctx, &wg, databaseUserFilter(
-			ctx, &wg, databaseUsersMapper(
-				ctx, &wg, databaseUsersStreamer(
-					ctx, &wg, client, projectsCnC,
-				),
-			),
-		),
-	)
-
-	// normalizedDatabaseUserCreator -> normalizedUserAssetCreator -> normalizedAssetAggregator
+	// databaseUsersStreamer -> databaseUsersMapper -> databaseUserFilter -> databaseUserPrinter -> normalizedDatabaseUserCreator -> normalizedUserAssetCreator -> normalizedAssetAggregator
 	normalizedUserAssetsChB := normalizedUserAssetCreator(
 		ctx, &wg, normalizedDatabaseUserCreator(
-			ctx, &wg, databaseUserCh,
+			ctx, &wg, databaseUserPrinter(
+				ctx, &wg, databaseUserFilter(
+					ctx, &wg, databaseUsersMapper(
+						ctx, &wg, databaseUsersStreamer(
+							ctx, &wg, client, projectsCnC,
+						),
+					),
+				),
+			),
 		),
 	)
 
