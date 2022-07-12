@@ -175,7 +175,7 @@ func normalizedAtlasTeamCreator(ctx context.Context, wg *sync.WaitGroup, input <
 	return output
 }
 
-func normalizedTeamAssetCreator(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.Group) <-chan *assetdata_model.NormalizedAsset {
+func normalizedGroupAssetCreator(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.Group) <-chan *assetdata_model.NormalizedAsset {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *assetdata_model.NormalizedAsset, 10)

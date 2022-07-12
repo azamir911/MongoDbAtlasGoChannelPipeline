@@ -84,7 +84,7 @@ func atlasUsersResponseMapper(ctx context.Context, wg *sync.WaitGroup, input <-c
 	return output
 }
 
-func atlasUsersFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AtlasUser) <-chan *mongodbatlas.AtlasUser {
+func atlasUserFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AtlasUser) <-chan *mongodbatlas.AtlasUser {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.AtlasUser, 10)

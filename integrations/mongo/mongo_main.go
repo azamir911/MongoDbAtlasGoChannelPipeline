@@ -17,9 +17,9 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 
 	client := Client()
 	//																									/ organizationPrinter
-	// organizationsStreamer -> organizationsFilter -> organizationsMapper -> organizationsDuplicator -|-> atlasUsersStreamer
+	// organizationsStreamer -> organizationsFilter -> organizationsMapper -> organizationDuplicator -|-> atlasUsersStreamer
 	// 																									\ teamsStreamer
-	organizationsChA, organizationsCnB, organizationsCnC := organizationsDuplicator(
+	organizationsChA, organizationsCnB, organizationsCnC := organizationDuplicator(
 		ctx, &wg, organizationsMapper(
 			ctx, &wg, organizationsFilter(
 				ctx, &wg, organizationsStreamer(
@@ -30,11 +30,11 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 	)
 	organizationPrinter(ctx, &wg, organizationsChA)
 
-	// atlasUsersStreamer -> atlasUsersResponseMapper -> atlasUsersFilter -> atlasUserPrinter -> normalizedAtlasUserCreator -> normalizedAtlasUserCreator -> normalizedUserAssetCreator -> normalizedAssetAggregator
+	// atlasUsersStreamer -> atlasUsersResponseMapper -> atlasUserFilter -> atlasUserPrinter -> normalizedAtlasUserCreator -> normalizedUserAssetCreator -> normalizedAssetAggregator
 	normalizedUserAssetsChA := normalizedUserAssetCreator(
 		ctx, &wg, normalizedAtlasUserCreator(
 			ctx, &wg, atlasUserPrinter(
-				ctx, &wg, atlasUsersFilter(
+				ctx, &wg, atlasUserFilter(
 					ctx, &wg, atlasUsersResponseMapper(
 						ctx, &wg, atlasUsersStreamer(
 							ctx, &wg, client, organizationsCnB,
@@ -45,8 +45,8 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 		),
 	)
 
-	// teamsStreamer -> teamsMapper -> teamFilter -> teamPrinter -> normalizedAtlasTeamCreator -> normalizedTeamAssetCreator -> normalizedAssetAggregator
-	normalizedGroupAssetsCh := normalizedTeamAssetCreator(
+	// teamsStreamer -> teamsMapper -> teamFilter -> teamPrinter -> normalizedAtlasTeamCreator -> normalizedGroupAssetCreator -> normalizedAssetAggregator
+	normalizedGroupAssetsCh := normalizedGroupAssetCreator(
 		ctx, &wg, normalizedAtlasTeamCreator(
 			ctx, &wg, teamPrinter(
 				ctx, &wg, teamFilter(
@@ -61,7 +61,7 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 	)
 
 	// 																							    / projectPrinter
-	// projectsStreamer -> projectsFilter -> projectsMapper -> projectFilter -> projectDuplicator -|-> clustersWithTeamsStreamer
+	// projectsStreamer -> projectsFilter -> projectsMapper -> projectFilter -> projectDuplicator -|-> teamsAssignedStreamer
 	//																							   |\ databaseUsersStreamer
 	//																							    \ customDbRolesStreamer
 	projectsCnA, projectsCnB, projectsCnC, projectsCnD := projectDuplicator(
@@ -157,8 +157,8 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 	)
 
 	// normalizedUserAssetCreator (atlas)  	 \
-	// 							   			  | -> normalizedAssetAggregator
-	// normalizedUserAssetCreator (database) /
+	// normalizedUserAssetCreator (database) | -> normalizedAssetAggregator
+	// normalizedGroupAssetCreator			 /
 	normalizedAssetAggregator(
 		ctx, normalizedAssetsCh, &wg, normalizedUserAssetsChA, normalizedUserAssetsChB, normalizedGroupAssetsCh,
 	)

@@ -23,7 +23,11 @@ func main() {
 	var wg sync.WaitGroup
 
 	mongoNormalizedAssetsCh := mongo.DoExecute(ctx, &wg)
-	normalizedAssetPrinter(ctx, &wg, mongoNormalizedAssetsCh)
+	normalizedAssetPrinter(
+		ctx, &wg, normalizedGroupAssetFilter(
+			ctx, &wg, mongoNormalizedAssetsCh,
+		),
+	)
 
 	wg.Wait()
 
@@ -43,4 +47,31 @@ func normalizedAssetPrinter(ctx context.Context, wg *sync.WaitGroup, input <-cha
 			log.Info().Msgf("\tNormalized Asset: %+v %+v", normalizedAsset, normalizedAsset.Data)
 		}
 	}()
+}
+
+func normalizedGroupAssetFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) <-chan *assetdata_model.NormalizedAsset {
+	wg.Add(1)
+	log := ctx.Value(CyLogger).(*zerolog.Logger)
+	output := make(chan *assetdata_model.NormalizedAsset, 10)
+
+	go func() {
+		defer func() {
+			log.Debug().Msg("Normalized Group Asset Filter Closing channel output!")
+			close(output)
+			wg.Done()
+		}()
+
+		for normalizedAsset := range input {
+			log.Debug().Msg("Normalized Group Asset Filter processing working!")
+			//time.Sleep(time.Second)
+			if normalizedAsset.Type == assetdata_model.GroupAssetType {
+				select {
+				case output <- normalizedAsset:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+	return output
 }

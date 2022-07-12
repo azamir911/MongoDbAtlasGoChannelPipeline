@@ -104,7 +104,7 @@ func organizationsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 	return output
 }
 
-func organizationsDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organization) (<-chan *mongodbatlas.Organization, <-chan *mongodbatlas.Organization, <-chan *mongodbatlas.Organization) {
+func organizationDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organization) (<-chan *mongodbatlas.Organization, <-chan *mongodbatlas.Organization, <-chan *mongodbatlas.Organization) {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	outputA, outputB, outputC := make(chan *mongodbatlas.Organization, 10), make(chan *mongodbatlas.Organization, 10), make(chan *mongodbatlas.Organization, 10)
