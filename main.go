@@ -1,7 +1,8 @@
 package main
 
 import (
-	"MongoDbAtlasGoChannelPipeline/integrations/mongo"
+	"MongoDbAtlasGoChannelPipeline/integrations/infrastructure"
+	"MongoDbAtlasGoChannelPipeline/integrations/structure"
 	"MongoDbAtlasGoChannelPipeline/pkg/model/assetdata_model"
 	"context"
 	"github.com/rs/zerolog"
@@ -21,9 +22,11 @@ func main() {
 	ctx, _ := context.WithCancel(context.WithValue(context.Background(), CyLogger, &log))
 
 	var wg sync.WaitGroup
+	integrationRunner := structure.Get(60)
 
-	mongoNormalizedAssetsCh := mongo.DoExecute(ctx, &wg)
-	normalizedAssetPrinter(
+	mongoNormalizedAssetsCh := integrationRunner(ctx, &wg)
+	//mongoNormalizedAssetsCh := mongo.DoExecute(ctx, &wg)
+	infrastructure.NormalizedAssetPrinter(
 		ctx, &wg, normalizedGroupAssetFilter(
 			ctx, &wg, mongoNormalizedAssetsCh,
 		),
