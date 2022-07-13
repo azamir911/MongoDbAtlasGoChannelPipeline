@@ -17,7 +17,7 @@ func teamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Teams Streamer Closing channel output!")
+			log.Debug().Msg("Mongo: Teams Streamer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -34,7 +34,7 @@ func teamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas
 				time.Sleep(time.Second)
 				teams, _, err := client.Teams.List(ctx, organization.ID, options)
 				if err != nil {
-					log.Err(err).Msg("Failed to get teams list")
+					log.Err(err).Msg("Mongo: Failed to get teams list")
 					break
 				}
 				if teams == nil || len(teams) == 0 {
@@ -61,7 +61,7 @@ func teamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan []mongodb
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Teams Mapper Closing channel output!")
+			log.Debug().Msg("Mongo: Teams Mapper Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -89,7 +89,7 @@ func teamFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbat
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Team Filter Closing channel output!")
+			log.Debug().Msg("Mongo: Team Filter Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -116,14 +116,14 @@ func teamPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodba
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Atlas User Printer Closing channel output!")
+			log.Debug().Msg("Mongo: Team Printer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
 
 		for team := range input {
-			log.Debug().Msg("Team Printer processing working!")
-			log.Info().Msgf("\tTeam: ID '%v', Name '%v'", team.ID, team.Name)
+			log.Debug().Msg("Mongo: Team Printer processing working!")
+			log.Info().Msgf("\tMongo: Team: ID '%v', Name '%v'", team.ID, team.Name)
 
 			select {
 			case output <- team:
@@ -144,13 +144,13 @@ func normalizedAtlasTeamCreator(ctx context.Context, wg *sync.WaitGroup, input <
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Normalized Atlas Group Creator Closing channel output!")
+			log.Debug().Msg("Mongo: Normalized Group Creator Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
 
 		for team := range input {
-			log.Debug().Msg("Normalized Atlas Group Creator processing working!")
+			log.Debug().Msg("Mongo: Normalized Group Creator processing working!")
 
 			normalizedGroup := &assetdata_model.Group{
 				AssetDataBaseFields: assetdata_model.AssetDataBaseFields{

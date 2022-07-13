@@ -26,7 +26,7 @@ func clustersWithTeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Clusters With Teams Streamer Closing channel output!")
+			log.Debug().Msg("Mongo: Clusters With Teams Streamer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -43,7 +43,7 @@ func clustersWithTeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *
 				time.Sleep(time.Second)
 				advancedClustersResponse, _, err := client.AdvancedClusters.List(ctx, projectWithTeams.Project.ID, options)
 				if err != nil {
-					log.Err(err).Msg("Failed to get advanced clusters list")
+					log.Err(err).Msg("Mongo: Failed to get advanced clusters list")
 					break
 				}
 				if advancedClustersResponse == nil || len(advancedClustersResponse.Results) == 0 {
@@ -75,7 +75,7 @@ func clustersWithTeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-ch
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Clusters With Teams Mapper Closing channel output!")
+			log.Debug().Msg("Mongo: Clusters With Teams Mapper Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -107,7 +107,7 @@ func clusterWithTeamsDuplicator(ctx context.Context, wg *sync.WaitGroup, input <
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Cluster With Teams Duplicator Closing channel outputA and outputB!")
+			log.Debug().Msg("Mongo: Cluster With Teams Duplicator Closing channel outputA and outputB!")
 			close(outputA)
 			close(outputB)
 			wg.Done()
@@ -140,7 +140,7 @@ func clusterWithTeamsPrinter(ctx context.Context, wg *sync.WaitGroup, input <-ch
 		defer wg.Done()
 
 		for clusterWithTeams := range input {
-			log.Debug().Msg("Cluster With Teams Printer processing working!")
+			log.Debug().Msg("Mongo: Cluster With Teams Printer processing working!")
 			var assignedRoles string
 			var assignedTeams string
 			if clusterWithTeams != nil && clusterWithTeams.AssignedTeams != nil && len(clusterWithTeams.AssignedTeams) > 0 {
@@ -151,7 +151,7 @@ func clusterWithTeamsPrinter(ctx context.Context, wg *sync.WaitGroup, input <-ch
 
 			}
 
-			log.Info().Msgf("\tAdvanced Cluster: %+v, Teams Assigned: %+v, Teams Roles: %+v", clusterWithTeams.Cluster, assignedTeams, assignedRoles)
+			log.Info().Msgf("\tMongo: Advanced Cluster: %+v, Teams Assigned: %+v, Teams Roles: %+v", clusterWithTeams.Cluster, assignedTeams, assignedRoles)
 		}
 	}()
 }
@@ -163,7 +163,7 @@ func clusterWithTeamsMapper(ctx context.Context, wg *sync.WaitGroup, input <-cha
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Cluster With Teams Mapper Closing channel output!")
+			log.Debug().Msg("Mongo: Cluster With Teams Mapper Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -189,7 +189,7 @@ func clusterDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mo
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Cluster Duplicator Closing channel outputA and outputB!")
+			log.Debug().Msg("Mongo: Cluster Duplicator Closing channel outputA and outputB!")
 			close(outputB)
 			close(outputC)
 			close(outputD)

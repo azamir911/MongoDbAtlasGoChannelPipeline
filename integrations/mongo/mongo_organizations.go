@@ -15,7 +15,7 @@ func organizationsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Organizations Streamer Closing channel output!")
+			log.Debug().Msg("Mongo: Organizations Streamer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -33,7 +33,7 @@ func organizationsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 			time.Sleep(time.Second)
 			organizations, _, err := client.Organizations.List(ctx, options)
 			if err != nil {
-				log.Err(err).Msg("Failed to get organizations list")
+				log.Err(err).Msg("Mongo: Failed to get organizations list")
 				break
 			}
 			if organizations == nil || len(organizations.Results) == 0 {
@@ -59,7 +59,7 @@ func organizationsFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Organizations Filter Closing channel output!")
+			log.Debug().Msg("Mongo: Organizations Filter Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -84,7 +84,7 @@ func organizationsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Organizations Mapper Closing channel output!")
+			log.Debug().Msg("Mongo: Organizations Mapper Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -111,7 +111,7 @@ func organizationDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-cha
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Organizations Duplicator Closing channel outputA and outputB!")
+			log.Debug().Msg("Mongo: Organizations Duplicator Closing channel outputA and outputB!")
 			close(outputA)
 			close(outputB)
 			close(outputC)
@@ -148,13 +148,13 @@ func organizationPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer func() {
-			log.Debug().Msg("Organization Printer exit")
+			log.Debug().Msg("Mongo: Organization Printer exit")
 			wg.Done()
 		}()
 
 		for organization := range input {
-			log.Debug().Msg("Organization Printer processing working!")
-			log.Info().Msgf("\tOrg: Id %v, Name %v", organization.ID, organization.Name)
+			log.Debug().Msg("Mongo: Organization Printer processing working!")
+			log.Info().Msgf("\tMongo: Org: Id %v, Name %v", organization.ID, organization.Name)
 		}
 	}()
 }

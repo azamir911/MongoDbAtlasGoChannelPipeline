@@ -199,17 +199,17 @@ func normalizedAssetAggregator(ctx context.Context, output chan<- *assetdata_mod
 	}(output)
 }
 
-func normalizedUserAssetCleaner(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
+func normalizedAssetCleaner(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer func() {
-			log.Debug().Msg("Empty Atlas Normalized Asset Printer exit")
+			log.Debug().Msg("Empty Normalized Asset Printer exit")
 			wg.Done()
 		}()
 
 		for normalizedAsset := range input {
-			log.Debug().Msg("Empty Atlas Normalized Asset Printer processing working!")
+			log.Debug().Msg("Empty Normalized Asset Printer processing working!")
 			log.Debug().Msgf("\tEmpty Normalized Asset: %+v %+v", normalizedAsset, normalizedAsset.Data)
 		}
 	}()

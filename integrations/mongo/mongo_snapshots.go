@@ -15,7 +15,7 @@ func snapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodba
 
 	go func() {
 		defer func() {
-			log.Debug().Msgf("Snapshots Streamer %d Closing channel output!", startPage)
+			log.Debug().Msgf("Mongo: Snapshots Streamer %d Closing channel output!", startPage)
 			close(output)
 			wg.Done()
 		}()
@@ -38,7 +38,7 @@ func snapshotsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodba
 				time.Sleep(time.Second)
 				snapshots, _, err := client.CloudProviderSnapshots.GetAllCloudProviderSnapshots(ctx, snapshotReqPathParameters, options)
 				if err != nil {
-					log.Err(err).Msg("Failed to get cloud provider snapshots list")
+					log.Err(err).Msg("Mongo: Failed to get cloud provider snapshots list")
 					break
 				}
 				if snapshots == nil || len(snapshots.Results) == 0 {
@@ -66,17 +66,17 @@ func snapshotsAggregator(ctx context.Context, wg *sync.WaitGroup, inputs ...<-ch
 	go func() {
 		defer func() {
 			innerWg.Wait()
-			log.Debug().Msg("Snapshots Aggregator Closing channel output!")
+			log.Debug().Msg("Mongo: Snapshots Aggregator Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
 
 		for i, in := range inputs {
 			innerWg.Add(1)
-			log.Debug().Msgf("Snapshots Aggregator %d processing working!", i+1)
+			log.Debug().Msgf("Mongo: Snapshots Aggregator %d processing working!", i+1)
 			go func(index int, in <-chan *mongodbatlas.CloudProviderSnapshots) {
 				defer innerWg.Done()
-				log.Debug().Msgf("Snapshots Aggregator %d Inner Func processing working!", index)
+				log.Debug().Msgf("Mongo: Snapshots Aggregator %d Inner Func processing working!", index)
 				for x := range in {
 					output <- x
 				}
@@ -93,7 +93,7 @@ func snapshotsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mong
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Snapshots Mapper Closing channel output!")
+			log.Debug().Msg("Mongo: Snapshots Mapper Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -120,7 +120,7 @@ func snapshotFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Snapshots Filter Closing channel output!")
+			log.Debug().Msg("Mongo: Snapshots Filter Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -148,13 +148,13 @@ func snapshotPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mong
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer func() {
-			log.Debug().Msg("Snapshot Printer exit")
+			log.Debug().Msg("Mongo: Snapshot Printer exit")
 			wg.Done()
 		}()
 
 		for snapshot := range input {
-			log.Debug().Msg("Snapshot Printer processing working!")
-			log.Info().Msgf("Snapshot: %+v", snapshot)
+			log.Debug().Msg("Mongo: Snapshot Printer processing working!")
+			log.Info().Msgf("Mongo: Snapshot: %+v", snapshot)
 		}
 	}()
 }

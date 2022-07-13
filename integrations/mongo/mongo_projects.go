@@ -15,7 +15,7 @@ func projectsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Projects Streamer Closing channel output!")
+			log.Debug().Msg("Mongo: Projects Streamer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -31,7 +31,7 @@ func projectsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 			time.Sleep(time.Second)
 			projects, _, err := client.Projects.GetAllProjects(ctx, options)
 			if err != nil {
-				log.Err(err).Msg("Failed to get projects list")
+				log.Err(err).Msg("Mongo: Failed to get projects list")
 				break
 			}
 			if projects == nil || len(projects.Results) == 0 {
@@ -57,7 +57,7 @@ func projectsFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Projects Filter Closing channel output!")
+			log.Debug().Msg("Mongo: Projects Filter Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -82,7 +82,7 @@ func projectsMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Projects Mapper Closing channel output!")
+			log.Debug().Msg("Mongo: Projects Mapper Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -109,7 +109,7 @@ func projectFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongod
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Project Filter Closing channel output!")
+			log.Debug().Msg("Mongo: Project Filter Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -139,7 +139,7 @@ func projectDuplicator(ctx context.Context, wg *sync.WaitGroup, input <-chan *mo
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Project Duplicator Closing channel outputA and outputB!")
+			log.Debug().Msg("Mongo: Project Duplicator Closing channel outputA and outputB!")
 			close(outputA)
 			close(outputB)
 			close(outputC)
@@ -187,8 +187,8 @@ func projectPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongo
 		defer wg.Done()
 
 		for project := range input {
-			log.Debug().Msg("Project Printer processing working!")
-			log.Info().Msgf("\tProject: Id %v, Name %v, Created %v, Cluster %v", project.ID, project.Name, project.Created, project.ClusterCount)
+			log.Debug().Msg("Mongo: Project Printer processing working!")
+			log.Info().Msgf("\tMongo: Project: Id %v, Name %v, Created %v, Cluster %v", project.ID, project.Name, project.Created, project.ClusterCount)
 		}
 	}()
 }

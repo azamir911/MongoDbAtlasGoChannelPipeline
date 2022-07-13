@@ -15,7 +15,7 @@ func customDbRolesStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Custom Db Roles Streamer Closing channel output!")
+			log.Debug().Msg("Mongo: Custom Db Roles Streamer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -24,7 +24,7 @@ func customDbRolesStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 			time.Sleep(time.Second)
 			customDBRoles, _, err := client.CustomDBRoles.List(ctx, project.ID, nil)
 			if err != nil {
-				log.Err(err).Msg("Failed to get custom DB roles list")
+				log.Err(err).Msg("Mongo: Failed to get custom DB roles list")
 				break
 			}
 			if customDBRoles == nil || len(*customDBRoles) == 0 {
@@ -48,7 +48,7 @@ func customDbRolesMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Custom Db Roles Mapper Closing channel output!")
+			log.Debug().Msg("Mongo: Custom Db Roles Mapper Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -75,7 +75,7 @@ func customDbRoleFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan mo
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Custom Db Role Filter Closing channel output!")
+			log.Debug().Msg("Mongo: Custom Db Role Filter Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -102,8 +102,8 @@ func customDbRolePrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan m
 		defer wg.Done()
 
 		for customDBRole := range input {
-			log.Debug().Msg("Custom Db Role Printer processing working!")
-			log.Info().Msgf("\tRole: Name %v", customDBRole.RoleName)
+			log.Debug().Msg("Mongo: Custom Db Role Printer processing working!")
+			log.Info().Msgf("\tMongo: Role: Name %v", customDBRole.RoleName)
 		}
 	}()
 }

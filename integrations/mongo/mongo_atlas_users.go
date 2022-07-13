@@ -19,7 +19,7 @@ func atlasUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodb
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Atlas User Streamer Closing channel output!")
+			log.Debug().Msg("Mongo: Atlas User Streamer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -36,7 +36,7 @@ func atlasUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodb
 				time.Sleep(time.Second)
 				atlasUsersResponse, _, err := client.Organizations.Users(ctx, organization.ID, options)
 				if err != nil {
-					log.Err(err).Msg("Failed to get organizations users")
+					log.Err(err).Msg("Mongo: Failed to get organizations users")
 					break
 				}
 				if atlasUsersResponse == nil || len(atlasUsersResponse.Results) == 0 {
@@ -63,7 +63,7 @@ func atlasUsersResponseMapper(ctx context.Context, wg *sync.WaitGroup, input <-c
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Atlas User Mapper Closing channel output!")
+			log.Debug().Msg("Mongo: Atlas User Mapper Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -91,7 +91,7 @@ func atlasUserFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mong
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Atlas User Filter Closing channel output!")
+			log.Debug().Msg("Mongo: Atlas User Filter Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -120,14 +120,14 @@ func atlasUserPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *mon
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Atlas User Printer Closing channel output!")
+			log.Debug().Msg("Mongo: Atlas User Printer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
 
 		for user := range input {
-			log.Debug().Msg("Atlas User Printer processing working!")
-			log.Info().Msgf("\tAtlas User: Id %v, FirstName %v, LastName %v, Username %v", user.ID, user.FirstName, user.LastName, user.Username)
+			log.Debug().Msg("Mongo: Atlas User Printer processing working!")
+			log.Info().Msgf("\tMongo: Atlas User: Id %v, FirstName %v, LastName %v, Username %v", user.ID, user.FirstName, user.LastName, user.Username)
 
 			select {
 			case output <- user:
@@ -147,13 +147,13 @@ func normalizedAtlasUserCreator(ctx context.Context, wg *sync.WaitGroup, input <
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Normalized Atlas User Creator Closing channel output!")
+			log.Debug().Msg("Mongo: Normalized Atlas User Creator Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
 
 		for user := range input {
-			log.Debug().Msg("Normalized Atlas User Creator processing working!")
+			log.Debug().Msg("Mongo: Normalized Atlas User Creator processing working!")
 
 			groupIds := extractAtlasUserGroupIds(user)
 			roles, isAdmin := extractAtlasUserRoles(user)
@@ -231,13 +231,13 @@ func normalizedUserAssetCreator(ctx context.Context, wg *sync.WaitGroup, input <
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Atlas Normalized User Asset Creator Closing channel output!")
+			log.Debug().Msg("Mongo: Atlas Normalized User Asset Creator Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
 
 		for user := range input {
-			log.Debug().Msg("Atlas Normalized User Asset Creator processing working!")
+			log.Debug().Msg("Mongo: Atlas Normalized User Asset Creator processing working!")
 
 			asset := &assetdata_model.NormalizedAsset{
 				Id:            uuid.New(),

@@ -17,7 +17,7 @@ func databaseUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Database Users Streamer Closing channel output!")
+			log.Debug().Msg("Mongo: Database Users Streamer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -34,7 +34,7 @@ func databaseUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 				time.Sleep(time.Second)
 				databaseUsers, _, err := client.DatabaseUsers.List(ctx, project.ID, options)
 				if err != nil {
-					log.Err(err).Msg("Failed to get database users list")
+					log.Err(err).Msg("Mongo: Failed to get database users list")
 					break
 				}
 				if databaseUsers == nil || len(databaseUsers) == 0 {
@@ -61,7 +61,7 @@ func databaseUsersMapper(ctx context.Context, wg *sync.WaitGroup, input <-chan [
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Database Users Mapper Closing channel output!")
+			log.Debug().Msg("Mongo: Database Users Mapper Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -88,7 +88,7 @@ func databaseUserFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *m
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Database User Filter Closing channel output!")
+			log.Debug().Msg("Mongo: Database User Filter Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -117,14 +117,14 @@ func databaseUserPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Database User Printer Closing channel output!")
+			log.Debug().Msg("Mongo: Database User Printer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
 
 		for databaseUser := range input {
-			log.Debug().Msg("Database User Printer processing working!")
-			log.Info().Msgf("\tDatabase User: %v", databaseUser.Username)
+			log.Debug().Msg("Mongo: Database User Printer processing working!")
+			log.Info().Msgf("\tMongo: Database User: %v", databaseUser.Username)
 
 			select {
 			case output <- databaseUser:
@@ -148,13 +148,13 @@ func normalizedDatabaseUserCreator(ctx context.Context, wg *sync.WaitGroup, inpu
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Normalized Database User Creator Closing channel output!")
+			log.Debug().Msg("Mongo: Normalized Database User Creator Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
 
 		for user := range input {
-			log.Debug().Msg("Normalized Database User Creator processing working!")
+			log.Debug().Msg("Mongo: Normalized Database User Creator processing working!")
 
 			// Name is a concatenation of a project and a cluster
 			//name := fmt.Sprintf("%s/%s", project.Name, user.Username)

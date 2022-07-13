@@ -15,7 +15,7 @@ func snapshotsRestoreJobsStreamer(ctx context.Context, wg *sync.WaitGroup, clien
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Snapshots Restore Jobs Closing channel output!")
+			log.Debug().Msg("Mongo: Snapshots Restore Jobs Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -37,7 +37,7 @@ func snapshotsRestoreJobsStreamer(ctx context.Context, wg *sync.WaitGroup, clien
 				time.Sleep(time.Second)
 				snapshotRestoreJobs, _, err := client.CloudProviderSnapshotRestoreJobs.List(ctx, snapshotReqPathParameters, options)
 				if err != nil {
-					log.Err(err).Msg("Failed to get cloud provider snapshot restore jobs list")
+					log.Err(err).Msg("Mongo: Failed to get cloud provider snapshot restore jobs list")
 					break
 				}
 				if snapshotRestoreJobs == nil || len(snapshotRestoreJobs.Results) == 0 {
@@ -64,7 +64,7 @@ func snapshotsRestoreJobsMapper(ctx context.Context, wg *sync.WaitGroup, input <
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Snapshots Restore Jobs Mapper Closing channel output!")
+			log.Debug().Msg("Mongo: Snapshots Restore Jobs Mapper Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -91,7 +91,7 @@ func snapshotRestoreJobFilter(ctx context.Context, wg *sync.WaitGroup, input <-c
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Snapshots Restore Job Filter Closing channel output!")
+			log.Debug().Msg("Mongo: Snapshots Restore Job Filter Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -119,13 +119,13 @@ func snapshotRestoreJobPrinter(ctx context.Context, wg *sync.WaitGroup, input <-
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	go func() {
 		defer func() {
-			log.Debug().Msg("Snapshot Restore Job Printer exit")
+			log.Debug().Msg("Mongo: Snapshot Restore Job Printer exit")
 			wg.Done()
 		}()
 
 		for snapshotRestoreJob := range input {
-			log.Debug().Msg("Snapshot Restore Job Printer processing working!")
-			log.Info().Msgf("Snapshot Restore Job: %+v", snapshotRestoreJob)
+			log.Debug().Msg("Mongo: Snapshot Restore Job Printer processing working!")
+			log.Info().Msgf("Mongo: Snapshot Restore Job: %+v", snapshotRestoreJob)
 		}
 	}()
 }

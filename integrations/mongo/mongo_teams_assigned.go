@@ -20,7 +20,7 @@ func teamsAssignedStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("Teams Assigned Streamer Closing channel output!")
+			log.Debug().Msg("Mongo: Teams Assigned Streamer Closing channel output!")
 			close(output)
 			wg.Done()
 		}()
@@ -31,7 +31,7 @@ func teamsAssignedStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 			teamsAssigned, _, err := client.Projects.GetProjectTeamsAssigned(ctx, project.ID)
 
 			if err != nil {
-				log.Err(err).Msg("Failed to get teams assigned list")
+				log.Err(err).Msg("Mongo: Failed to get teams assigned list")
 				break
 			}
 
