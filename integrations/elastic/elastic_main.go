@@ -1,6 +1,7 @@
 package elastic
 
 import (
+	"MongoDbAtlasGoChannelPipeline/integrations/infrastructure"
 	"MongoDbAtlasGoChannelPipeline/pkg/model/assetdata_model"
 	"context"
 	"sync"
@@ -16,16 +17,24 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 
 	elasticCloudConnector := connector()
 
-	elasticCloudUserPrinter(
-		ctx, &wg, elasticCloudUserFilter(
-			ctx, &wg, elasticCloudUsersMapper(
-				ctx, &wg, elasticCloudUsersStreamer(
-					ctx, &wg, elasticCloudConnector, accountStreamer(
-						ctx, &wg, elasticCloudConnector,
+	normalizedUserAssetsChA := normalizedUserAssetCreator(
+		ctx, &wg, normalizedElasticCloudUserCreator(
+			ctx, &wg, elasticCloudUserPrinter(
+				ctx, &wg, elasticCloudUserFilter(
+					ctx, &wg, elasticCloudUsersMapper(
+						ctx, &wg, elasticCloudUsersStreamer(
+							ctx, &wg, elasticCloudConnector, accountStreamer(
+								ctx, &wg, elasticCloudConnector,
+							),
+						),
 					),
 				),
 			),
 		),
+	)
+
+	infrastructure.NormalizedAssetAggregator(
+		ctx, normalizedAssetsCh, &wg, normalizedUserAssetsChA,
 	)
 
 	wg.Wait()

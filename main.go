@@ -22,14 +22,17 @@ func main() {
 	ctx, _ := context.WithCancel(context.WithValue(context.Background(), CyLogger, &log))
 
 	var wg sync.WaitGroup
-	integrationRunner := structure.Get(60)
+	integrationRunner := structure.Get(57)
 
 	mongoNormalizedAssetsCh := integrationRunner(ctx, &wg)
-	//mongoNormalizedAssetsCh := mongo.DoExecute(ctx, &wg)
+	//infrastructure.NormalizedAssetPrinter(
+	//	ctx, &wg, normalizedGroupAssetFilter(
+	//		ctx, &wg, mongoNormalizedAssetsCh,
+	//	),
+	//)
+
 	infrastructure.NormalizedAssetPrinter(
-		ctx, &wg, normalizedGroupAssetFilter(
-			ctx, &wg, mongoNormalizedAssetsCh,
-		),
+		ctx, &wg, mongoNormalizedAssetsCh,
 	)
 
 	wg.Wait()
