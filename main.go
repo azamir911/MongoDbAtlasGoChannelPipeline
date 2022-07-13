@@ -38,20 +38,6 @@ func main() {
 	//cancelFunc()
 }
 
-func normalizedAssetPrinter(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) {
-	wg.Add(1)
-	log := ctx.Value(CyLogger).(*zerolog.Logger)
-
-	go func() {
-		defer wg.Done()
-
-		for normalizedAsset := range input {
-			log.Debug().Msg("Atlas Normalized Asset Printer processing working!")
-			log.Info().Msgf("\tNormalized Asset: %+v %+v", normalizedAsset, normalizedAsset.Data)
-		}
-	}()
-}
-
 func normalizedGroupAssetFilter(ctx context.Context, wg *sync.WaitGroup, input <-chan *assetdata_model.NormalizedAsset) <-chan *assetdata_model.NormalizedAsset {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
