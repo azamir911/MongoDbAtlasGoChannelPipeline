@@ -19,7 +19,7 @@ type ClusterWithTeams struct {
 	AssignedTeams []*mongodbatlas.Result
 }
 
-func clustersWithTeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *ProjectWithTeams) <-chan *ClustersWithTeams {
+func clustersWithTeamsStreamer(ctx context.Context, wg *sync.WaitGroup, input <-chan *ProjectWithTeams) <-chan *ClustersWithTeams {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *ClustersWithTeams, 10)
@@ -30,6 +30,8 @@ func clustersWithTeamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *
 			close(output)
 			wg.Done()
 		}()
+
+		client := newClient()
 
 		for projectWithTeams := range input {
 			// Declare the option to get only one team id

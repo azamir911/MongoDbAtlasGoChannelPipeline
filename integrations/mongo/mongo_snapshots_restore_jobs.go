@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func snapshotsRestoreJobsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.AdvancedCluster) <-chan *mongodbatlas.CloudProviderSnapshotRestoreJobs {
+func snapshotsRestoreJobsStreamer(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.AdvancedCluster) <-chan *mongodbatlas.CloudProviderSnapshotRestoreJobs {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.CloudProviderSnapshotRestoreJobs, 10)
@@ -19,6 +19,8 @@ func snapshotsRestoreJobsStreamer(ctx context.Context, wg *sync.WaitGroup, clien
 			close(output)
 			wg.Done()
 		}()
+
+		client := newClient()
 
 		for cluster := range input {
 			snapshotReqPathParameters := &mongodbatlas.SnapshotReqPathParameters{

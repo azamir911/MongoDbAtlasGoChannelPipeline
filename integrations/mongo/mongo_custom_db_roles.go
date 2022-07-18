@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func customDbRolesStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Project) <-chan *[]mongodbatlas.CustomDBRole {
+func customDbRolesStreamer(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Project) <-chan *[]mongodbatlas.CustomDBRole {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *[]mongodbatlas.CustomDBRole, 10)
@@ -19,6 +19,8 @@ func customDbRolesStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 			close(output)
 			wg.Done()
 		}()
+
+		client := newClient()
 
 		for project := range input {
 			time.Sleep(time.Second)

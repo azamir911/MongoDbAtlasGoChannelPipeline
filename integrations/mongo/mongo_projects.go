@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func projectsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client) <-chan *mongodbatlas.Projects {
+func projectsStreamer(ctx context.Context, wg *sync.WaitGroup) <-chan *mongodbatlas.Projects {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.Projects, 10)
@@ -19,6 +19,8 @@ func projectsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbat
 			close(output)
 			wg.Done()
 		}()
+
+		client := newClient()
 
 		// Declare the option to get only one project id
 		options := &mongodbatlas.ListOptions{

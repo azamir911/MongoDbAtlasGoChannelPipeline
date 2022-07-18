@@ -15,7 +15,6 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 		outerWg.Done()
 	}()
 
-	client := Client()
 	//																									/ organizationPrinter
 	// organizationsStreamer -> organizationsFilter -> organizationsMapper -> organizationDuplicator -|-> atlasUsersStreamer
 	// 																									\ teamsStreamer
@@ -23,7 +22,7 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 		ctx, &wg, organizationsMapper(
 			ctx, &wg, organizationsFilter(
 				ctx, &wg, organizationsStreamer(
-					ctx, &wg, client,
+					ctx, &wg,
 				),
 			),
 		),
@@ -37,7 +36,7 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 				ctx, &wg, atlasUserFilter(
 					ctx, &wg, atlasUsersResponseMapper(
 						ctx, &wg, atlasUsersStreamer(
-							ctx, &wg, client, organizationsCnB,
+							ctx, &wg, organizationsCnB,
 						),
 					),
 				),
@@ -52,7 +51,7 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 				ctx, &wg, teamFilter(
 					ctx, &wg, teamsMapper(
 						ctx, &wg, teamsStreamer(
-							ctx, &wg, client, organizationsCnC,
+							ctx, &wg, organizationsCnC,
 						),
 					),
 				),
@@ -68,9 +67,7 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 		ctx, &wg, projectFilter(
 			ctx, &wg, projectsMapper(
 				ctx, &wg, projectsFilter(
-					ctx, &wg, projectsStreamer(
-						ctx, &wg, client,
-					),
+					ctx, &wg, projectsStreamer(ctx, &wg),
 				),
 			),
 		),
@@ -82,8 +79,8 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 	clusterWithTeamsCnA, clusterWithTeamsCnB := clusterWithTeamsDuplicator(
 		ctx, &wg, clustersWithTeamsMapper(
 			ctx, &wg, clustersWithTeamsStreamer(
-				ctx, &wg, client, teamsAssignedStreamer(
-					ctx, &wg, client, projectsCnB,
+				ctx, &wg, teamsAssignedStreamer(
+					ctx, &wg, projectsCnB,
 				),
 			),
 		),
@@ -107,7 +104,7 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 				ctx, &wg, databaseUserFilter(
 					ctx, &wg, databaseUsersMapper(
 						ctx, &wg, databaseUsersStreamer(
-							ctx, &wg, client, projectsCnC,
+							ctx, &wg, projectsCnC,
 						),
 					),
 				),
@@ -120,7 +117,7 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 		ctx, &wg, customDbRoleFilter(
 			ctx, &wg, customDbRolesMapper(
 				ctx, &wg, customDbRolesStreamer(
-					ctx, &wg, client, projectsCnD,
+					ctx, &wg, projectsCnD,
 				),
 			),
 		),
@@ -130,10 +127,10 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 	//						| -> snapshotsAggregator -> snapshotsMapper -> snapshotFilter -> snapshotPrinter
 	// SnapshotsStreamer2 /
 	streamer1 := snapshotsStreamer(
-		ctx, &wg, client, clusterCnA, 1,
+		ctx, &wg, clusterCnA, 1,
 	)
 	streamer2 := snapshotsStreamer(
-		ctx, &wg, client, clusterCnB, 2,
+		ctx, &wg, clusterCnB, 2,
 	)
 	snapshotPrinter(
 		ctx, &wg, snapshotFilter(
@@ -150,7 +147,7 @@ func execute(ctx context.Context, outerWg *sync.WaitGroup, normalizedAssetsCh ch
 		ctx, &wg, snapshotRestoreJobFilter(
 			ctx, &wg, snapshotsRestoreJobsMapper(
 				ctx, &wg, snapshotsRestoreJobsStreamer(
-					ctx, &wg, client, clusterCnC,
+					ctx, &wg, clusterCnC,
 				),
 			),
 		),

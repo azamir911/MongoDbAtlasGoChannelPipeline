@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func organizationsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client) <-chan *mongodbatlas.Organizations {
+func organizationsStreamer(ctx context.Context, wg *sync.WaitGroup) <-chan *mongodbatlas.Organizations {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.Organizations, 10)
@@ -19,6 +19,8 @@ func organizationsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 			close(output)
 			wg.Done()
 		}()
+
+		client := newClient()
 
 		// Declare the option to get only one organization id
 		options := &mongodbatlas.OrganizationsListOptions{

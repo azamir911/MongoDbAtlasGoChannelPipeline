@@ -10,7 +10,7 @@ const (
 	CyLogger = "cylogger"
 )
 
-func Client() *mongodbatlas.Client {
+func newClient() *mongodbatlas.Client {
 	t := digest.NewTransport("uxbqhcfh", "9360a0dc-9e45-44ff-8e92-bdfe0a8a0a54")
 	tc, err := t.Client()
 	//client, err := opsmngr.New(tc)

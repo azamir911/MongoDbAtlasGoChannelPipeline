@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func teamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Organization) <-chan []mongodbatlas.Team {
+func teamsStreamer(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organization) <-chan []mongodbatlas.Team {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan []mongodbatlas.Team, 10)
@@ -21,6 +21,8 @@ func teamsStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas
 			close(output)
 			wg.Done()
 		}()
+
+		client := newClient()
 
 		for organization := range input {
 			// Declare the option to get only one team id

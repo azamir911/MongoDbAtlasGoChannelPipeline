@@ -13,7 +13,7 @@ type ProjectWithTeams struct {
 	AssignedTeams []*mongodbatlas.Result
 }
 
-func teamsAssignedStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Project) <-chan *ProjectWithTeams {
+func teamsAssignedStreamer(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Project) <-chan *ProjectWithTeams {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *ProjectWithTeams, 10)
@@ -24,6 +24,8 @@ func teamsAssignedStreamer(ctx context.Context, wg *sync.WaitGroup, client *mong
 			close(output)
 			wg.Done()
 		}()
+
+		client := newClient()
 
 		for project := range input {
 			log.Debug().Msg("Teams Assigned processing working!")

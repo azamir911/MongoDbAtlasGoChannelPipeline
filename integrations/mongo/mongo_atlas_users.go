@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func atlasUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodbatlas.Client, input <-chan *mongodbatlas.Organization) <-chan *mongodbatlas.AtlasUsersResponse {
+func atlasUsersStreamer(ctx context.Context, wg *sync.WaitGroup, input <-chan *mongodbatlas.Organization) <-chan *mongodbatlas.AtlasUsersResponse {
 	wg.Add(1)
 	log := ctx.Value(CyLogger).(*zerolog.Logger)
 	output := make(chan *mongodbatlas.AtlasUsersResponse, 10)
@@ -23,6 +23,8 @@ func atlasUsersStreamer(ctx context.Context, wg *sync.WaitGroup, client *mongodb
 			close(output)
 			wg.Done()
 		}()
+
+		client := newClient()
 
 		for organization := range input {
 			// Declare the option to get only one organization id
