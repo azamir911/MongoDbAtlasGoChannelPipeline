@@ -1,6 +1,6 @@
 module MongoDbAtlasGoChannelPipeline
 
-go 1.17
+go 1.18.3
 
 require (
 	github.com/mongodb-forks/digest v1.0.4
